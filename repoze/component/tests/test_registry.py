@@ -196,29 +196,6 @@ class TestRegistryFunctional(unittest.TestCase):
 
         return registry
 
-    def test_register_and_lookup(self):
-        registry = self._makeRegistry()
-        look = registry.lookup
-        eq = self.assertEqual
-
-        eq(look('bladerunner', None, 'deckard'), 'deckardvalue')
-        eq(look('bladerunner', None, ['inherits', 'deckard']), 'deckardvalue')
-        eq(look('friend', 'luckman', name='name'), 'luckmanvalue')
-        eq(look('fight', 'barris', 'luckman'), 'barrisluckmanvalue')
-        eq(look('fight', ['inherits', 'barris'], 'luckman'),
-           'barrisluckmanvalue')
-        eq(look('fight', ['deckard', 'barris'], 'luckman'),
-           'barrisluckmanvalue')
-        eq(look('bladerunner', None, ['deckard', 'barris']), 'deckardvalue')
-        eq(look('friend', 'luckman'), None)
-        eq(look('bladerunner', 'deckard', 'luckman'), None)
-        eq(look('bladerunner', 'luckman', 'deckard'), 'deckardvalue')
-        eq(look('bladerunner', 'barris', 'deckard'), 'deckardvalue')
-        eq(look('bladerunner', None, None), None)
-
-        registry.register('default', 'a', None, None)
-        eq(look('default', None, None), 'a')
-
     def test_as_mapping(self):
         d = {'a':1, 'b':2, 'c':3, 'd':4}
         registry = self._makeRegistry(d)
@@ -267,6 +244,29 @@ class TestRegistryFunctional(unittest.TestCase):
         self.assertEqual(len(registry), 4)
         registry.clear()
         self.assertEqual(len(registry), 0)
+
+    def test_register_and_lookup(self):
+        registry = self._makeRegistry()
+        look = registry.lookup
+        eq = self.assertEqual
+
+        eq(look('bladerunner', None, 'deckard'), 'deckardvalue')
+        eq(look('bladerunner', None, ['inherits', 'deckard']), 'deckardvalue')
+        eq(look('friend', 'luckman', name='name'), 'luckmanvalue')
+        eq(look('fight', 'barris', 'luckman'), 'barrisluckmanvalue')
+        eq(look('fight', ['inherits', 'barris'], 'luckman'),
+           'barrisluckmanvalue')
+        eq(look('fight', ['deckard', 'barris'], 'luckman'),
+           'barrisluckmanvalue')
+        eq(look('bladerunner', None, ['deckard', 'barris']), 'deckardvalue')
+        eq(look('friend', 'luckman'), None)
+        eq(look('bladerunner', 'deckard', 'luckman'), None)
+        eq(look('bladerunner', 'luckman', 'deckard'), 'deckardvalue')
+        eq(look('bladerunner', 'barris', 'deckard'), 'deckardvalue')
+        eq(look('bladerunner', None, None), None)
+
+        registry.register('default', 'a', None, None)
+        eq(look('default', None, None), 'a')
 
     def test_register_and_resolve_classes(self):
         registry = self._makeRegistry()
@@ -453,7 +453,53 @@ class TestRegistryFunctional(unittest.TestCase):
 
         result = registry.resolve('foo', instance1, instance2)
         self.assertEqual(result, 'somevalue')
-        
+
+class TestProvidedBy(unittest.TestCase):
+    def _callFUT(self, obj):
+        from repoze.component import providedby
+        return providedby(obj)
+
+    def test_None(self):
+        result = self._callFUT(None)
+        self.assertEqual(result, [None])
+
+    def test_newstyle_class(self):
+        class Foo(object):
+            __component_type__ = ['a', 'b']
+        result = self._callFUT(Foo)
+        self.assertEqual(result, ['a', 'b', type(Foo)])
+
+    def test_oldstyle_class(self):
+        class Foo:
+            __component_type__ = ['a', 'b']
+        result = self._callFUT(Foo)
+        self.assertEqual(result, ['a', 'b', type(Foo)])
+
+    def test_oldstyle_instance(self):
+        class Foo:
+            __component_type__ = ['a', 'b']
+        foo = Foo()
+        result = self._callFUT(foo)
+        self.assertEqual(result, ['a', 'b', Foo])
+
+    def test_newstyle_instance(self):
+        class Foo(object):
+            __component_type__ = ['a', 'b']
+        foo = Foo()
+        result = self._callFUT(foo)
+        self.assertEqual(result, ['a', 'b', Foo])
+
+    def test_string(self):
+        result = self._callFUT('foo')
+        self.assertEqual(result, [str])
+
+    def test_int(self):
+        result = self._callFUT(1)
+        self.assertEqual(result, [int])
+
+    def test_bool(self):
+        result = self._callFUT(True)
+        self.assertEqual(result, [bool])
 
 class Deckard(object):
     __component_type__ = 'deckard'

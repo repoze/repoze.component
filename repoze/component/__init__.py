@@ -221,5 +221,10 @@ def providedby(obj):
                 if not item in provides:
                     provides.append(item)
 
+    if hasattr(obj, '__class__'):
+        provides.append(obj.__class__)
+    else:
+        provides.append(type(obj))
+
     return provides
 

@@ -71,6 +71,10 @@ Classes or instances can carry component types:
    obj = MyObject()
    obj.__component_type__ = ('mytype', 'anothertype')
 
+Note that objects don't explicitly need to have __component_type__
+attribute for simple usage; the class of an object is an implicit
+component type that can be used in registrations.
+
 How :mod:`repoze.component` Computes an Effecive Component Type for a Requires Object
 -------------------------------------------------------------------------------------
 
@@ -86,6 +90,8 @@ construct the final "requires" argument used.
 
 - If the object is an instance, its class then its base classes are
   checked in Python MRO order for a ``__component_type__`` attribute.
+
+- The object's class is added as an unconditional component type.
 
 We'll use the following set of objects as examples:
 
@@ -115,8 +121,10 @@ component registry:
   class.  The B class provides component type ``b``, the ``A`` class
   provides component types (``a`` and ``hello``).
 
+- We use the object's class.
+
 Thus our "requires" argument for this particular object is ``['i',
-'c', 'b', 'a', 'hello']``.  Every object supplied as a "requires"
+'c', 'b', 'a', 'hello', C]``.  Every object supplied as a "requires"
 argument to either the ``resolve`` or ``adapt`` method of a component
 registry has its requires values computed this way.  We then find a
 component based on the set of requires arguments passed in ala
