@@ -16,6 +16,8 @@ def adapter(context, structure):
     if requires is None:
         raise ValueError('Missing "requires" attribute')
 
+    requires = tuple(requires)
+
     factory = context.getvalue(structure, 'factory')
     if factory is None:
         raise ValueError('Missing "factory" attribute')
@@ -25,10 +27,10 @@ def adapter(context, structure):
     name = structure.get('name', '')
     kw = dict(name=name)
 
-    callback = CallLater(context.registry.register,
-                         provides, factory, *requires, **kw)
+    callback = context.call_later(context.registry.register,
+                                  provides, factory, *requires, **kw)
     discriminator = ('adapter', requires, provides, name)
-    return discriminator, callback
+    return {'discriminator':discriminator, 'callback':callback}
 
 def utility(context, structure):
     if not isinstance(structure, dict):
@@ -52,17 +54,8 @@ def utility(context, structure):
     kw = dict(name=name)
 
     discriminator = ('utility', provides, name)
-    callback = CallLater(context.registry.register,
-                         provides, component, **kw)
+    callback = context.call_later(context.registry.register,
+                                  provides, component, **kw)
 
-    return discriminator, callback
-
-class CallLater(object):
-    def __init__(self, func, *arg, **kw):
-        self.func = (func,)
-        self.arg = arg
-        self.kw = kw
-
-    def __call__(self):
-        return self.func[0](*self.arg, **self.kw)
+    return {'discriminator':discriminator, 'callback':callback}
 
