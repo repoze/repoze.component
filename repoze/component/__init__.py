@@ -16,7 +16,7 @@ _marker = object()
 
 class Registry(object):
     """ A component registry.  The component registry supports the
-    mapping interface and can be used as you might a regular
+    Python mapping interface and can be used as you might a regular
     dictionary.  It also support more advanced registrations and
     lookups that include a ``requires`` argument and a ``name`` via
     its ``register`` and ``lookup`` methods.  It may be treated as an
