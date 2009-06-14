@@ -1,10 +1,27 @@
-Built-In Directives
-===================
+Using ``repoze.component`` with ``repoze.configuration``
+=======================================================
 
 :mod:`repoze.component` makes use of :mod:`repoze.configuration` to
 allow configurations to be expressed via :term:`YAML`.  It makes
 ``utility`` and ``adapter`` directives available to systems which use
 :mod:`repoze.configuration`.
+
+Loading
+-------
+
+To load and execute a configuration file that contains
+``repoze.component`` registrations, use the following pattern"
+
+.. code-block:: python
+
+   from repoze.component import Registry
+
+   from repoze.configuration import Context
+   from repoze.configuration import execute
+
+   registry = Registry()
+   context = Context(registry)
+   execute('somefile.yml', context=context)
 
 The Utility Directive
 ---------------------

@@ -12,3 +12,6 @@ Glossary
   directive
      A callable that handles a configuration section, populating a
      registry.
+  zope.component
+     The system from which the ideas in repoze.component are derived.
+
