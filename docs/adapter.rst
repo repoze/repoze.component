@@ -1,0 +1,183 @@
+Using :mod:`repoze.component` as an Adapter System
+==================================================
+
+We've seen the basic registration and lookup facilities of a
+:mod:`repoze.component` registry.  You can provide additional
+functionality to your applications if you use it as an "adapter
+registry".  Using a component registry as an adapter registry makes it
+possible to use the :mod:`repoze.component` component registry for the
+same purposes as something like :term:`zope.component`.
+
+The extra methods exposed by a :mod:`repoze.component` registry that
+allow you to treat it as an adapter regstry are ``resolve`` and
+``adapt``.  The ``resolve`` method simply accepts a provides value and
+sequence of *objects that supply component types* and returns a
+matching component.  The ``adapt`` method does exactly what resolve
+does, but it additionally uses the component as a factory, passing
+each ``requires`` value to it as a positional argument and returns the
+result.
+
+.. note:: If you hold your head just right and squint at it hard
+   enough, you might consider :mod:`repoze.component` software that makes
+   it possible to do a form of `aspect-oriented programming
+   <http://en.wikipedia.org/wiki/Aspect-oriented_programming>`_ in
+   Python.  However, you need to know nothing about aspect-oriented
+   programming to use it (the author doesn't really know anything
+   about "proper" aspect-oriented programming either, but he's told
+   that it's not dissimlar to the mechanisms exposed by
+   :mod:`repoze.component`).
+
+"Requires" Objects Supply Component Types
+-----------------------------------------
+
+Object used as "requires" arguments to the ``resolve`` and ``adapts``
+methods of a component registry usually supply a component type.  This
+is done by adding a ``__component_type__`` attribute to objects passed
+to these methods.
+
+The component type must be stored on those objects as the
+``__component_type__`` attribute.  The ``__component_type__`` may be a
+single object (usually a string) or it may be a sequence of objects.
+The object is assumed to be a single object if the
+``__component_type__`` does not have an ``__iter__`` method.  For
+example, the following is legal:
+
+.. code-block:: python
+
+   class MyObject(object):
+       __component_type__ = 'mytype'
+
+The followng is also legal.
+
+.. code-block:: python
+
+   class MyObject(object):
+       __component_type__ = ('mytype', 'anothertype')
+
+Likewise, it's also legal to do:
+
+.. code-block:: python
+
+   class MyObject(object):
+       __component_type__ = ['mytype', 'anothertype']
+
+Classes or instances can carry component types:
+
+.. code-block:: python
+
+   class MyObject(object):
+       pass
+
+   obj = MyObject()
+   obj.__component_type__ = ('mytype', 'anothertype')
+
+How :mod:`repoze.component` Computes an Effecive Component Type for a Requires Object
+-------------------------------------------------------------------------------------
+
+When a component type is computed for an object, the object is
+searched in the following order.  All values are collected and used to
+construct the final "requires" argument used.
+
+- The object itself is checked for the ``__component_type__``
+  attribute.
+
+- If the object is a class, its base classes are checked in Python MRO
+  order for a ``__component_type__`` attribute.
+
+- If the object is an instance, its class then its base classes are
+  checked in Python MRO order for a ``__component_type__`` attribute.
+
+We'll use the following set of objects as examples:
+
+.. code-block:: python
+
+    class A(object):
+        __component_type__ = ('a', 'hello')
+
+    class B(A):
+        __component_type__ = 'b'
+
+    class C(B):
+        __component_type__ = 'c'
+
+    instance = C()
+    instance.__component_type__ = 'i'
+
+If "instance" is used as an argument to the ``resolve`` method of an
+component registry:
+
+- We first look at the instance to find a component type.  This
+  finds component type ``i``.
+
+- We look at its direct class ``C`` which finds component type ``c``.
+
+- We look at the component type of the base classes of the ``C``
+  class.  The B class provides component type ``b``, the ``A`` class
+  provides component types (``a`` and ``hello``).
+
+Thus our "requires" argument for this particular object is ``['i',
+'c', 'b', 'a', 'hello']``.  Every object supplied as a "requires"
+argument to either the ``resolve`` or ``adapt`` method of a component
+registry has its requires values computed this way.  We then find a
+component based on the set of requires arguments passed in ala
+:ref:`lookup_ordering`.
+
+Comparing :mod:`repoze.component` to :term:`zope.component`
+-----------------------------------------------------------
+
+Zope and Twisted developers (and any other developer who has used
+:term:`zope.component`) will find :mod:`repoze.component` familiar.
+:mod:`repoze.component` steals concepts shamelessly from
+:term:`zope.component`.  :mod:`repoze.component` differs primarily from
+:term:`zope.component` by abandoning the high-level concept of an
+:term:`interface`.  In :term:`zope.component`, component lookups and
+registrations are done in terms of interfaces, which are very specific
+kinds of Python objects.  In :mod:`repoze.component`, interfaces are not
+used.  Instead, components (such as "adapters" and "utilities") are
+registered using marker "component types", which are usually just
+strings although they can be any hashable type.
+
+.. note::
+
+  In the examples below, where a :term:`zope.component` API might
+  expect an interface object (e.g. the interface ``ISomething``), the
+  :mod:`repoze.component` API expects a compoment type (e.g. the string
+  ``something``).  Also, in the examples below, whereas
+  :term:`zope.component` users typically rely on APIs that consult a
+  "global registry", :mod:`repoze.component` provides no such facility.
+  Thus examples that refer to ``registry`` below refer to a plugin
+  registry created by parsing a configuration file (or constructed
+  manually).
+
+The :mod:`repoze.component` equivalent of ``utility =
+zope.component.getUtility(ISomething)`` is the following:
+
+.. code-block:: python
+
+  utility = registry.lookup('something')
+
+The :mod:`repoze.component` equivalent of ``implementation =
+zope.component.getAdapter(context, ISomething, name='foo')`` is the
+following:
+
+.. code-block:: python
+
+  implementation = registry.adapt('something', context, name='foo')
+
+The :mod:`repoze.component` equivalent of ``implementation =
+getMultiAdapter((context1, context2), ISomething, name='foo')`` is the
+following:
+
+.. code-block:: python
+
+  implementation = registry.adapt('something', context1, context2, name='foo')
+
+Likewise, the :mod:`repoze.component` equivalent of ``implementation =
+getMultiAdapter((context1, context2, context3), ISomething,
+name='foo')`` is the following:
+
+.. code-block:: python
+
+  implementation = registry.adapt('something', context1, context2, context3,
+                                  name='foo')
+
