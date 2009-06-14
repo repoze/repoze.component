@@ -1,13 +1,15 @@
 Using ``repoze.component`` with ``repoze.configuration``
 =======================================================
 
-:mod:`repoze.component` makes use of :mod:`repoze.configuration` to
+:mod:`repoze.component` makes use of :term:`repoze.configuration` to
 allow configurations to be expressed via :term:`YAML`.  It makes
 ``utility`` and ``adapter`` directives available to systems which use
 :mod:`repoze.configuration`.
 
-Loading
--------
+.. _loading_from_a_config_file:
+
+Loading Components from a Configuration File
+--------------------------------------------
 
 To load and execute a configuration file that contains
 ``repoze.component`` registrations, use the following pattern"
@@ -22,6 +24,9 @@ To load and execute a configuration file that contains
    registry = Registry()
    context = Context(registry)
    execute('somefile.yml', context=context)
+
+At this point the registry (a :mod:`repoze.component` registry) will
+be populated.
 
 The Utility Directive
 ---------------------
