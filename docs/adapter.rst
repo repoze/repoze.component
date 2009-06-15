@@ -85,7 +85,7 @@ attribute attribute for simple usage; the class of an object is an
 implicit component type that can be used in registrations.
 
 "Under the hood", the ``provides`` function sets the
-``__component_type__`` attribute on a class or object.
+``__component_types__`` attribute on a class or object.
 
 How :mod:`repoze.component` Computes an Effecive Component Type for a Requires Object
 -------------------------------------------------------------------------------------
@@ -94,14 +94,14 @@ When a component type is computed for an object, the object is
 searched in the following order.  All values are collected and used to
 construct the final "requires" argument used.
 
-- The object itself is checked for the ``__component_type__``
+- The object itself is checked for the ``__component_types__``
   attribute.
 
 - If the object is a class, its base classes are checked in Python MRO
-  order for a ``__component_type__`` attribute.
+  order for a ``__component_types__`` attribute.
 
 - If the object is an instance, its class then its base classes are
-  checked in Python MRO order for a ``__component_type__`` attribute.
+  checked in Python MRO order for a ``__component_types__`` attribute.
 
 - The object's class is added as an unconditional component type.
 

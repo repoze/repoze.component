@@ -270,25 +270,25 @@ class TestRegistryFunctional(unittest.TestCase):
 
     def test_register_and_resolve_classes(self):
         registry = self._makeRegistry()
-        look = registry.resolve
+        resolve = registry.resolve
         eq = self.assertEqual
 
-        eq(look('bladerunner', None, Deckard), 'deckardvalue')
-        eq(look('bladerunner', None, InheritsDeckard), 'deckardvalue')
-        eq(look('friend', Luckman, name='name'), 'luckmanvalue')
-        eq(look('fight', Barris, Luckman), 'barrisluckmanvalue')
-        eq(look('fight', InheritsBarris, Luckman), 'barrisluckmanvalue')
-        eq(look('fight', DeckardBarris, Luckman), 'barrisluckmanvalue')
-        eq(look('bladerunner', None, DeckardBarris), 'deckardvalue')
-        eq(look('friend', Luckman), None)
-        eq(look('bladerunner', Deckard, Luckman), None)
-        eq(look('bladerunner', Luckman, Deckard), 'deckardvalue')
-        eq(look('bladerunner', Barris, Deckard), 'deckardvalue')
-        eq(look('bladerunner', None, None), None)
+        eq(resolve('bladerunner', None, Deckard), 'deckardvalue')
+        eq(resolve('bladerunner', None, InheritsDeckard), 'deckardvalue')
+        eq(resolve('friend', Luckman, name='name'), 'luckmanvalue')
+        eq(resolve('fight', Barris, Luckman), 'barrisluckmanvalue')
+        eq(resolve('fight', InheritsBarris, Luckman), 'barrisluckmanvalue')
+        eq(resolve('fight', DeckardBarris, Luckman), 'barrisluckmanvalue')
+        eq(resolve('bladerunner', None, DeckardBarris), 'deckardvalue')
+        eq(resolve('friend', Luckman), None)
+        eq(resolve('bladerunner', Deckard, Luckman), None)
+        eq(resolve('bladerunner', Luckman, Deckard), 'deckardvalue')
+        eq(resolve('bladerunner', Barris, Deckard), 'deckardvalue')
+        eq(resolve('bladerunner', None, None), None)
                             
     def test_register_and_resolve_instances(self):
         registry = self._makeRegistry()
-        look = registry.resolve
+        resolve = registry.resolve
         eq = self.assertEqual
 
         deckard = Deckard(None)
@@ -298,71 +298,71 @@ class TestRegistryFunctional(unittest.TestCase):
         inheritsbarris = InheritsBarris(None)
         deckardbarris = DeckardBarris(None, None)
 
-        eq(look('bladerunner', None, deckard), 'deckardvalue')
-        eq(look('bladerunner', None, inheritsdeckard), 'deckardvalue')
-        eq(look('friend', luckman, name='name'), 'luckmanvalue')
-        eq(look('fight', barris, luckman), 'barrisluckmanvalue')
-        eq(look('fight', inheritsbarris, luckman), 'barrisluckmanvalue')
-        eq(look('fight', deckardbarris, luckman), 'barrisluckmanvalue')
-        eq(look('bladerunner', None, deckardbarris), 'deckardvalue')
-        eq(look('friend', luckman), None)
-        eq(look('bladerunner', deckard, luckman), None)
-        eq(look('bladerunner', luckman, deckard), 'deckardvalue')
-        eq(look('bladerunner', barris, deckard), 'deckardvalue')
-        eq(look('bladerunner', None, None), None)
+        eq(resolve('bladerunner', None, deckard), 'deckardvalue')
+        eq(resolve('bladerunner', None, inheritsdeckard), 'deckardvalue')
+        eq(resolve('friend', luckman, name='name'), 'luckmanvalue')
+        eq(resolve('fight', barris, luckman), 'barrisluckmanvalue')
+        eq(resolve('fight', inheritsbarris, luckman), 'barrisluckmanvalue')
+        eq(resolve('fight', deckardbarris, luckman), 'barrisluckmanvalue')
+        eq(resolve('bladerunner', None, deckardbarris), 'deckardvalue')
+        eq(resolve('friend', luckman), None)
+        eq(resolve('bladerunner', deckard, luckman), None)
+        eq(resolve('bladerunner', luckman, deckard), 'deckardvalue')
+        eq(resolve('bladerunner', barris, deckard), 'deckardvalue')
+        eq(resolve('bladerunner', None, None), None)
 
     def test_register_and_resolve_instances_withdict(self):
         registry = self._makeRegistry()
-        look = registry.resolve
+        resolve = registry.resolve
         eq = self.assertEqual
 
         deckard = Deckard(None)
-        deckard.__component_types__ = 'deckard'
+        provides(deckard, 'deckard')
         inheritsdeckard = InheritsDeckard(None)
-        deckard.__component_types__ = 'inherits'
+        provides(inheritsdeckard, 'inherits')
         luckman = Luckman(None)
-        luckman.__component_types__ = 'luckman'
+        provides(luckman, 'luckman')
         barris = Barris(None)
-        barris.__component_types__ = 'barris'
+        provides(barris, 'barris')
         inheritsbarris = InheritsBarris(None)
-        inheritsbarris.__component_types__ = 'inherits'
+        provides(inheritsbarris, 'inherits')
         deckardbarris = DeckardBarris(None, None)
-        deckardbarris.__component_types__ = ('deckard', 'barris')
+        provides(deckardbarris, 'deckard', 'barris')
 
-        eq(look('bladerunner', None, deckard), 'deckardvalue')
-        eq(look('bladerunner', None, inheritsdeckard), 'deckardvalue')
-        eq(look('friend', luckman, name='name'), 'luckmanvalue')
-        eq(look('fight', barris, luckman), 'barrisluckmanvalue')
-        eq(look('fight', inheritsbarris, luckman), 'barrisluckmanvalue')
-        eq(look('fight', deckardbarris, luckman), 'barrisluckmanvalue')
-        eq(look('bladerunner', None, deckardbarris), 'deckardvalue')
-        eq(look('friend', luckman), None)
-        eq(look('bladerunner', deckard, luckman), None)
-        eq(look('bladerunner', luckman, deckard), 'deckardvalue')
-        eq(look('bladerunner', barris, deckard), 'deckardvalue')
-        eq(look('bladerunner', None, None), None)
+        eq(resolve('bladerunner', None, deckard), 'deckardvalue')
+        eq(resolve('bladerunner', None, inheritsdeckard), 'deckardvalue')
+        eq(resolve('friend', luckman, name='name'), 'luckmanvalue')
+        eq(resolve('fight', barris, luckman), 'barrisluckmanvalue')
+        eq(resolve('fight', inheritsbarris, luckman), 'barrisluckmanvalue')
+        eq(resolve('fight', deckardbarris, luckman), 'barrisluckmanvalue')
+        eq(resolve('bladerunner', None, deckardbarris), 'deckardvalue')
+        eq(resolve('friend', luckman), None)
+        eq(resolve('bladerunner', deckard, luckman), None)
+        eq(resolve('bladerunner', luckman, deckard), 'deckardvalue')
+        eq(resolve('bladerunner', barris, deckard), 'deckardvalue')
+        eq(resolve('bladerunner', None, None), None)
 
     def test_register_and_resolve_oldstyle_classes(self):
         registry = self._makeRegistry()
-        look = registry.resolve
+        resolve = registry.resolve
         eq = self.assertEqual
         
-        eq(look('bladerunner', None, OSDeckard), 'deckardvalue')
-        eq(look('bladerunner', None, InheritsDeckard), 'deckardvalue')
-        eq(look('friend', Luckman, name='name'), 'luckmanvalue')
-        eq(look('fight', Barris, Luckman), 'barrisluckmanvalue')
-        eq(look('fight', InheritsBarris, Luckman), 'barrisluckmanvalue')
-        eq(look('fight', DeckardBarris, Luckman), 'barrisluckmanvalue')
-        eq(look('bladerunner', None, DeckardBarris), 'deckardvalue')
-        eq(look('friend', Luckman), None)
-        eq(look('bladerunner', Deckard, Luckman), None)
-        eq(look('bladerunner', Luckman, Deckard), 'deckardvalue')
-        eq(look('bladerunner', Barris, Deckard), 'deckardvalue')
-        eq(look('bladerunner', None, None), None)
+        eq(resolve('bladerunner', None, OSDeckard), 'deckardvalue')
+        eq(resolve('bladerunner', None, InheritsDeckard), 'deckardvalue')
+        eq(resolve('friend', Luckman, name='name'), 'luckmanvalue')
+        eq(resolve('fight', Barris, Luckman), 'barrisluckmanvalue')
+        eq(resolve('fight', InheritsBarris, Luckman), 'barrisluckmanvalue')
+        eq(resolve('fight', DeckardBarris, Luckman), 'barrisluckmanvalue')
+        eq(resolve('bladerunner', None, DeckardBarris), 'deckardvalue')
+        eq(resolve('friend', Luckman), None)
+        eq(resolve('bladerunner', Deckard, Luckman), None)
+        eq(resolve('bladerunner', Luckman, Deckard), 'deckardvalue')
+        eq(resolve('bladerunner', Barris, Deckard), 'deckardvalue')
+        eq(resolve('bladerunner', None, None), None)
 
     def test_register_and_resolve_oldstyle_instances(self):
         registry = self._makeRegistry()
-        look = registry.resolve
+        resolve = registry.resolve
         eq = self.assertEqual
         
         deckard = OSDeckard(None)
@@ -372,18 +372,18 @@ class TestRegistryFunctional(unittest.TestCase):
         inheritsbarris = OSInheritsBarris(None)
         deckardbarris = OSDeckardBarris(None, None)
 
-        eq(look('bladerunner', None, deckard), 'deckardvalue')
-        eq(look('bladerunner', None, inheritsdeckard), 'deckardvalue')
-        eq(look('friend', luckman, name='name'), 'luckmanvalue')
-        eq(look('fight', barris, luckman), 'barrisluckmanvalue')
-        eq(look('fight', inheritsbarris, luckman), 'barrisluckmanvalue')
-        eq(look('fight', deckardbarris, luckman), 'barrisluckmanvalue')
-        eq(look('bladerunner', None, deckardbarris), 'deckardvalue')
-        eq(look('friend', luckman), None)
-        eq(look('bladerunner', deckard, luckman), None)
-        eq(look('bladerunner', luckman, deckard), 'deckardvalue')
-        eq(look('bladerunner', barris, deckard), 'deckardvalue')
-        eq(look('bladerunner', None, None), None)
+        eq(resolve('bladerunner', None, deckard), 'deckardvalue')
+        eq(resolve('bladerunner', None, inheritsdeckard), 'deckardvalue')
+        eq(resolve('friend', luckman, name='name'), 'luckmanvalue')
+        eq(resolve('fight', barris, luckman), 'barrisluckmanvalue')
+        eq(resolve('fight', inheritsbarris, luckman), 'barrisluckmanvalue')
+        eq(resolve('fight', deckardbarris, luckman), 'barrisluckmanvalue')
+        eq(resolve('bladerunner', None, deckardbarris), 'deckardvalue')
+        eq(resolve('friend', luckman), None)
+        eq(resolve('bladerunner', deckard, luckman), None)
+        eq(resolve('bladerunner', luckman, deckard), 'deckardvalue')
+        eq(resolve('bladerunner', barris, deckard), 'deckardvalue')
+        eq(resolve('bladerunner', None, None), None)
 
     def test_register_and_resolve_oldstyle_instances_withdict(self):
         registry = self._makeRegistry()
@@ -436,23 +436,24 @@ class TestRegistryFunctional(unittest.TestCase):
         self.assertEqual(adapter.context, Barris)
 
     def test_register_Nones(self):
+        from repoze.component import provides
         class Two(object):
-            __component_types__ = 'two'
+            provides('two')
 
         class One(Two):
-            __component_types__ = 'one'
+            provides('one')
 
         class B(object):
-            __component_types__ = 'b'
+            provides('b')
 
         class A(B):
-            __component_types__ = 'a'
+            provides('a')
 
         instance1 = One()
-        instance1.__component_types__ = 'i'
+        provides(instance1, 'i')
 
         instance2 = A()
-        instance2.__component_types__ = 'i'
+        provides(instance2, 'i')
 
         registry = self._makeOne()
         registry.register('foo', 'somevalue', None, None)
@@ -465,32 +466,32 @@ class TestProvidedBy(unittest.TestCase):
         from repoze.component import providedby
         return providedby(obj)
 
-    def test_None(self):
-        result = self._callFUT(None)
-        self.assertEqual(list(result), [None])
-
     def test_newstyle_class(self):
+        from repoze.component import provides
         class Foo(object):
-            __component_types__ = ['a', 'b']
+            provides('a', 'b')
         result = self._callFUT(Foo)
         self.assertEqual(list(result), ['a', 'b', type(Foo), None])
 
     def test_oldstyle_class(self):
+        from repoze.component import provides
         class Foo:
-            __component_types__ = ['a', 'b']
+            provides('a', 'b')
         result = self._callFUT(Foo)
         self.assertEqual(list(result), ['a', 'b', type(Foo), None])
 
     def test_oldstyle_instance(self):
+        from repoze.component import provides
         class Foo:
-            __component_types__ = ['a', 'b']
+            provides('a', 'b')
         foo = Foo()
         result = self._callFUT(foo)
         self.assertEqual(list(result), ['a', 'b', Foo, None])
 
     def test_newstyle_instance(self):
+        from repoze.component import provides
         class Foo(object):
-            __component_types__ = ['a', 'b']
+            provides('a', 'b')
         foo = Foo()
         result = self._callFUT(foo)
         self.assertEqual(list(result), ['a', 'b', Foo, None])
