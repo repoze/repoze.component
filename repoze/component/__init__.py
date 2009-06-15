@@ -199,9 +199,9 @@ class Registry(object):
 def providedby(obj):
     """ Return a sequence of component types provided by obj ordered
     most specific to least specific.  """
+    is_class = hasattr(obj, '__bases__')
 
-    if hasattr(obj, '__bases__'):
-        # isclass
+    if is_class:
         lookup = inspect.getmro(obj)
     else:
         lookup = (obj,) + inspect.getmro(obj.__class__)
@@ -228,13 +228,12 @@ def providedby(obj):
     return tuple(provides)
 
 def _classprovides_advice(cls):
-    types, fn = cls.__dict__['__implements_advice_data__']
+    types, object_provides = cls.__dict__['__implements_advice_data__']
     del cls.__implements_advice_data__
-    fn(cls, *types)
+    object_provides(cls, *types)
     return cls
 
 def object_provides(object, *types):
-    provides = providedby(object)
     object.__component_types__ = types
     
 def provides(*types):
