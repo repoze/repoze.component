@@ -1,6 +1,11 @@
 from repoze.lru import lru_cache
 
 import inspect
+import sys
+import types
+
+from repoze.component.advice import addClassAdvisor
+
 try:
     from itertools import product # 2.6+
 except ImportError:
@@ -15,8 +20,8 @@ except ImportError:
             yield tuple(prod)
 
 @lru_cache(1000)
-def cached_product(*args, **kwds):
-    return tuple(product(*args, **kwds))
+def cached_product(*args):
+    return tuple(product(*args))
     
 _marker = object()
 
@@ -157,47 +162,35 @@ class Registry(object):
         info[(provides, name)] =  component
 
     def lookup(self, provides, *requires, **kw):
-        name = kw.get('name', '')
-        default = kw.get('default', None)
- 
         req = []
         for val in requires:
             if not hasattr(val, '__iter__'):
                 req.append((val, None))
             else:
                 req.append(tuple(val) + (None,))
+        return self._lookup(provides, *req, **kw)
 
-        def _resolve(r):
-            result = reg.get(r, _marker)
-            if result is not _marker:
-                key = (provides, name)
-                val = result.get(key, _marker)
-                if val is not _marker:
-                    return val
-            return _marker
-
-        combinations = cached_product(*req)
+    def _lookup(self, provides, *requires, **kw):
+        # each requires argument *must* be a tuple composed of hashable
+        # objects
+        name = kw.get('name', '')
         reg = self.data
-        defer = []
 
+        combinations = cached_product(*requires)
+ 
         for combo in combinations:
-            if None in combo:
-                defer.append(combo)
-                continue
-            val = _resolve(combo)
-            if val is not _marker:
-                return val
+            try:
+                result = reg[combo]
+                key = (provides, name)
+                return result[key]
+            except KeyError:
+                pass
 
-        for combo in defer:
-            val = _resolve(combo)
-            if val is not _marker:
-                return val
-
-        return default
+        return kw.get('default', None)
 
     def resolve(self, provides, *objects, **kw):
         requires = [ providedby(obj) for obj in objects ]
-        return self.lookup(provides, *requires, **kw)
+        return self._lookup(provides, *requires, **kw)
 
     def adapt(self, provides, *objects, **kw):
         factory = self.resolve(provides, *objects, **kw)
@@ -205,12 +198,10 @@ class Registry(object):
 
 def providedby(obj):
     """ Return a sequence of component types provided by obj ordered
-    most specific to least specific.  A special case exists: if
-    ``obj`` is None, the sequence ``[None]`` is returned"""
-    if obj is None:
-        return [None]
+    most specific to least specific.  """
 
-    if inspect.isclass(obj):
+    if hasattr(obj, '__bases__'):
+        # isclass
         lookup = inspect.getmro(obj)
     else:
         lookup = (obj,) + inspect.getmro(obj.__class__)
@@ -218,19 +209,49 @@ def providedby(obj):
     provides = []
 
     for base in lookup:
-        val = getattr(base, '__component_type__', _marker)
+        try:
+            types = base.__component_types__
+        except AttributeError:
+            continue
+        for item in types:
+            if not item in provides:
+                provides.append(item)
 
-        if val is not _marker:
-            if not hasattr(val, '__iter__'):
-                val = [val]
-            for item in val:
-                if not item in provides:
-                    provides.append(item)
-
-    if hasattr(obj, '__class__'):
+    try:
         provides.append(obj.__class__)
-    else:
+    except AttributeError:
         provides.append(type(obj))
 
-    return provides
+    if not None in provides:
+        provides.append(None)
 
+    return tuple(provides)
+
+def _classprovides_advice(cls):
+    types, fn = cls.__dict__['__implements_advice_data__']
+    del cls.__implements_advice_data__
+    fn(cls, *types)
+    return cls
+
+def object_provides(object, *types):
+    provides = providedby(object)
+    object.__component_types__ = types
+    
+def provides(*types):
+    frame = sys._getframe(1)
+    locals = frame.f_locals
+    if (locals is frame.f_globals) or ('__module__' not in locals):
+        # not called from within a class definition
+        if not types:
+            raise TypeError('provides must be called with an object')
+        ob, types = types[0], types[1:]
+        object_provides(ob, *types)
+        return ob
+    else:
+        # called from within a class definition
+        if '__implements_advice_data__' in locals:
+            raise TypeError(
+                "provides can be used only once in a class definition.")
+        locals['__implements_advice_data__'] = types, object_provides
+        addClassAdvisor(_classprovides_advice, depth=2)
+    

@@ -254,16 +254,16 @@ class TestRegistryFunctional(unittest.TestCase):
         eq(look('bladerunner', None, ['inherits', 'deckard']), 'deckardvalue')
         eq(look('friend', 'luckman', name='name'), 'luckmanvalue')
         eq(look('fight', 'barris', 'luckman'), 'barrisluckmanvalue')
-        eq(look('fight', ['inherits', 'barris'], 'luckman'),
+        eq(look('fight', ('inherits', 'barris'), 'luckman'),
            'barrisluckmanvalue')
-        eq(look('fight', ['deckard', 'barris'], 'luckman'),
+        eq(look('fight', ('deckard', 'barris'), 'luckman'),
            'barrisluckmanvalue')
-        eq(look('bladerunner', None, ['deckard', 'barris']), 'deckardvalue')
+        eq(look('bladerunner', (None,), ('deckard', 'barris')), 'deckardvalue')
         eq(look('friend', 'luckman'), None)
-        eq(look('bladerunner', 'deckard', 'luckman'), None)
-        eq(look('bladerunner', 'luckman', 'deckard'), 'deckardvalue')
-        eq(look('bladerunner', 'barris', 'deckard'), 'deckardvalue')
+        eq(look('bladerunner', 'deckard', ('luckman',)), None)
         eq(look('bladerunner', None, None), None)
+        eq(look('bladerunner', 'barris', 'deckard'), 'deckardvalue')
+        eq(look('bladerunner', 'luckman', 'deckard'), 'deckardvalue')
 
         registry.register('default', 'a', None, None)
         eq(look('default', None, None), 'a')
@@ -317,17 +317,17 @@ class TestRegistryFunctional(unittest.TestCase):
         eq = self.assertEqual
 
         deckard = Deckard(None)
-        deckard.__component_type__ = 'deckard'
+        deckard.__component_types__ = 'deckard'
         inheritsdeckard = InheritsDeckard(None)
-        deckard.__component_type__ = 'inherits'
+        deckard.__component_types__ = 'inherits'
         luckman = Luckman(None)
-        luckman.__component_type__ = 'luckman'
+        luckman.__component_types__ = 'luckman'
         barris = Barris(None)
-        barris.__component_type__ = 'barris'
+        barris.__component_types__ = 'barris'
         inheritsbarris = InheritsBarris(None)
-        inheritsbarris.__component_type__ = 'inherits'
+        inheritsbarris.__component_types__ = 'inherits'
         deckardbarris = DeckardBarris(None, None)
-        deckardbarris.__component_type__ = ('deckard', 'barris')
+        deckardbarris.__component_types__ = ('deckard', 'barris')
 
         eq(look('bladerunner', None, deckard), 'deckardvalue')
         eq(look('bladerunner', None, inheritsdeckard), 'deckardvalue')
@@ -387,34 +387,40 @@ class TestRegistryFunctional(unittest.TestCase):
 
     def test_register_and_resolve_oldstyle_instances_withdict(self):
         registry = self._makeRegistry()
-        look = registry.resolve
+        resolve = registry.resolve
         eq = self.assertEqual
+        from repoze.component import provides
 
         deckard = OSDeckard(None)
-        deckard.__component_type__ = 'deckard'
-        inheritsdeckard = OSInheritsDeckard(None)
-        deckard.__component_type__ = 'inherits'
-        luckman = OSLuckman(None)
-        luckman.__component_type__ = 'luckman'
-        barris = OSBarris(None)
-        barris.__component_type__ = 'barris'
-        inheritsbarris = OSInheritsBarris(None)
-        inheritsbarris.__component_type__ = 'inherits'
-        deckardbarris = OSDeckardBarris(None, None)
-        deckardbarris.__component_type__ = ('deckard', 'barris')
+        provides(deckard, 'deckard')
 
-        eq(look('bladerunner', None, deckard), 'deckardvalue')
-        eq(look('bladerunner', None, inheritsdeckard), 'deckardvalue')
-        eq(look('friend', luckman, name='name'), 'luckmanvalue')
-        eq(look('fight', barris, luckman), 'barrisluckmanvalue')
-        eq(look('fight', inheritsbarris, luckman), 'barrisluckmanvalue')
-        eq(look('fight', deckardbarris, luckman), 'barrisluckmanvalue')
-        eq(look('bladerunner', None, deckardbarris), 'deckardvalue')
-        eq(look('friend', luckman), None)
-        eq(look('bladerunner', deckard, luckman), None)
-        eq(look('bladerunner', luckman, deckard), 'deckardvalue')
-        eq(look('bladerunner', barris, deckard), 'deckardvalue')
-        eq(look('bladerunner', None, None), None)
+        inheritsdeckard = OSInheritsDeckard(None)
+        provides(inheritsdeckard, 'inhherits')
+
+        luckman = OSLuckman(None)
+        provides(luckman, 'luckman')
+
+        barris = OSBarris(None)
+        provides(barris, 'barris')
+
+        inheritsbarris = OSInheritsBarris(None)
+        provides(inheritsbarris, 'inherits')
+
+        deckardbarris = OSDeckardBarris(None, None)
+        provides(deckardbarris, 'deckard', 'barris')
+
+        eq(resolve('bladerunner', None, deckard), 'deckardvalue')
+        eq(resolve('bladerunner', None, inheritsdeckard), 'deckardvalue')
+        eq(resolve('friend', luckman, name='name'), 'luckmanvalue')
+        eq(resolve('fight', barris, luckman), 'barrisluckmanvalue')
+        eq(resolve('fight', inheritsbarris, luckman), 'barrisluckmanvalue')
+        eq(resolve('fight', deckardbarris, luckman), 'barrisluckmanvalue')
+        eq(resolve('bladerunner', None, deckardbarris), 'deckardvalue')
+        eq(resolve('friend', luckman), None)
+        eq(resolve('bladerunner', deckard, luckman), None)
+        eq(resolve('bladerunner', luckman, deckard), 'deckardvalue')
+        eq(resolve('bladerunner', barris, deckard), 'deckardvalue')
+        eq(resolve('bladerunner', None, None), None)
 
     def test_adapt(self):
         registry = self._makeRegistry()
@@ -431,22 +437,22 @@ class TestRegistryFunctional(unittest.TestCase):
 
     def test_register_Nones(self):
         class Two(object):
-            __component_type__ = 'two'
+            __component_types__ = 'two'
 
         class One(Two):
-            __component_type__ = 'one'
+            __component_types__ = 'one'
 
         class B(object):
-            __component_type__ = 'b'
+            __component_types__ = 'b'
 
         class A(B):
-            __component_type__ = 'a'
+            __component_types__ = 'a'
 
         instance1 = One()
-        instance1.__component_type__ = 'i'
+        instance1.__component_types__ = 'i'
 
         instance2 = A()
-        instance2.__component_type__ = 'i'
+        instance2.__component_types__ = 'i'
 
         registry = self._makeOne()
         registry.register('foo', 'somevalue', None, None)
@@ -461,105 +467,112 @@ class TestProvidedBy(unittest.TestCase):
 
     def test_None(self):
         result = self._callFUT(None)
-        self.assertEqual(result, [None])
+        self.assertEqual(list(result), [None])
 
     def test_newstyle_class(self):
         class Foo(object):
-            __component_type__ = ['a', 'b']
+            __component_types__ = ['a', 'b']
         result = self._callFUT(Foo)
-        self.assertEqual(result, ['a', 'b', type(Foo)])
+        self.assertEqual(list(result), ['a', 'b', type(Foo), None])
 
     def test_oldstyle_class(self):
         class Foo:
-            __component_type__ = ['a', 'b']
+            __component_types__ = ['a', 'b']
         result = self._callFUT(Foo)
-        self.assertEqual(result, ['a', 'b', type(Foo)])
+        self.assertEqual(list(result), ['a', 'b', type(Foo), None])
 
     def test_oldstyle_instance(self):
         class Foo:
-            __component_type__ = ['a', 'b']
+            __component_types__ = ['a', 'b']
         foo = Foo()
         result = self._callFUT(foo)
-        self.assertEqual(result, ['a', 'b', Foo])
+        self.assertEqual(list(result), ['a', 'b', Foo, None])
 
     def test_newstyle_instance(self):
         class Foo(object):
-            __component_type__ = ['a', 'b']
+            __component_types__ = ['a', 'b']
         foo = Foo()
         result = self._callFUT(foo)
-        self.assertEqual(result, ['a', 'b', Foo])
+        self.assertEqual(list(result), ['a', 'b', Foo, None])
 
     def test_string(self):
         result = self._callFUT('foo')
-        self.assertEqual(result, [str])
+        self.assertEqual(list(result), [str, None])
 
     def test_int(self):
         result = self._callFUT(1)
-        self.assertEqual(result, [int])
+        self.assertEqual(list(result), [int, None])
 
     def test_bool(self):
         result = self._callFUT(True)
-        self.assertEqual(result, [bool])
+        self.assertEqual(list(result), [bool, None])
+
+    def test_None(self):
+        import types
+        result = self._callFUT(None)
+        self.assertEqual(list(result), [types.NoneType, None])
+
+from repoze.component import provides
 
 class Deckard(object):
-    __component_type__ = 'deckard'
+    provides('deckard')
     def __init__(self, context):
         self.context = context
 
 class Luckman(object):
-    __component_type__ = 'luckman'
+    provides('luckman')
     def __init__(self, context):
         self.context = context
 
 class Barris(object):
-    __component_type__ = 'barris'
+    provides('barris')
     def __init__(self, context):
         self.context = context
 
 class DeckardBarris(object):
-    __component_type__ = ('deckard', 'barris')
+    provides('deckard', 'barris')
     def __init__(self, context1, context2):
         self.context1 = context1 
         self.context2 = context2
    
 class InheritsDeckard(Deckard):
-    __component_type__ = 'inherits'
+    provides('inherits')
     def __init__(self, context):
         self.context = context
     
 class InheritsBarris(Barris):
-    __component_type__ = 'inherits'
+    provides('inherits')
     def __init__(self, context):
         self.context = context
     
 class OSDeckard:
-    __component_type__ = 'deckard'
+    provides('deckard')
     def __init__(self, context):
         self.context = context
 
 class OSLuckman:
-    __component_type__ = 'luckman'
+    provides('luckman')
     def __init__(self, context):
         self.context = context
 
 class OSBarris:
-    __component_type__ = 'barris'
+    provides('barris')
     def __init__(self, context):
         self.context = context
 
 class OSDeckardBarris:
-    __component_type__ = ('deckard', 'barris')
+    provides('deckard', 'barris')
     def __init__(self, context1, context2):
         self.context1 = context1 
         self.context2 = context2
     
 class OSInheritsDeckard(OSDeckard):
-    __component_type__ = 'inherits'
+    provides('inherits')
     def __init__(self, context):
         self.context = context
     
 class OSInheritsBarris(OSBarris):
-    __component_type__ = 'inherits'
+    provides('inherits')
     def __init__(self, context):
         self.context = context
     

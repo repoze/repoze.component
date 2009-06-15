@@ -32,48 +32,60 @@ result.
 
 Object used as "requires" arguments to the ``resolve`` and ``adapts``
 methods of a component registry usually supply a component type.  This
-is done by adding a ``__component_type__`` attribute to objects passed
-to these methods.
+is done by adding using the ``provides`` function against objects
+passed to these methods.
 
-The component type must be stored on those objects as the
-``__component_type__`` attribute.  The ``__component_type__`` may be a
-single object (usually a string) or it may be a sequence of objects.
-The object is assumed to be a single object if the
-``__component_type__`` does not have an ``__iter__`` method.  For
-example, the following is legal:
+The ``provides`` function may be used within a class definition, it
+may be used as a class decorator, or it may be applied against an
+instance. Within a class definition and as a class decorator, it
+accepts as positional arguments the component types.
 
 .. code-block:: python
 
+   from repoze.component import provides
+
    class MyObject(object):
-       __component_type__ = 'mytype'
+       provides('mytype')
 
 The followng is also legal.
 
 .. code-block:: python
 
-   class MyObject(object):
-       __component_type__ = ('mytype', 'anothertype')
+   from repoze.component import provides
 
-Likewise, it's also legal to do:
+   class MyObject(object):
+       provides('mytype', 'anothertype')
+
+Likewise, it's also legal to do (in Python 2.6):
 
 .. code-block:: python
 
-   class MyObject(object):
-       __component_type__ = ['mytype', 'anothertype']
+   from repoze.component import provides
 
-Classes or instances can carry component types:
-
-.. code-block:: python
-
+   @provides('mytype', 'anothertype')
    class MyObject(object):
        pass
 
-   obj = MyObject()
-   obj.__component_type__ = ('mytype', 'anothertype')
+You can also use the ``provides`` function against an instance, in
+which case the first argument is assumed to be the object you're
+trying to assign component types to:
 
-Note that objects don't explicitly need to have __component_type__
-attribute for simple usage; the class of an object is an implicit
-component type that can be used in registrations.
+.. code-block:: python
+
+    from repoze.component import provides
+
+    class MyObject(object):
+        pass
+
+    obj = MyObject()
+    provides(obj, 'mytype', 'anothertype')
+
+Note that objects don't explicitly need to have a ``provides``
+attribute attribute for simple usage; the class of an object is an
+implicit component type that can be used in registrations.
+
+"Under the hood", the ``provides`` function sets the
+``__component_type__`` attribute on a class or object.
 
 How :mod:`repoze.component` Computes an Effecive Component Type for a Requires Object
 -------------------------------------------------------------------------------------
@@ -97,17 +109,19 @@ We'll use the following set of objects as examples:
 
 .. code-block:: python
 
+    from repoze.component import provides
+
     class A(object):
-        __component_type__ = ('a', 'hello')
+        provides('a', 'hello')
 
     class B(A):
-        __component_type__ = 'b'
+        provides('b')
 
     class C(B):
-        __component_type__ = 'c'
+        provides('c')
 
     instance = C()
-    instance.__component_type__ = 'i'
+    provides(instance, 'i')
 
 If "instance" is used as an argument to the ``resolve`` method of an
 component registry:
@@ -123,11 +137,13 @@ component registry:
 
 - We use the object's class.
 
+- We use the value ``None``.
+
 Thus our "requires" argument for this particular object is ``['i',
-'c', 'b', 'a', 'hello', C]``.  Every object supplied as a "requires"
-argument to either the ``resolve`` or ``adapt`` method of a component
-registry has its requires values computed this way.  We then find a
-component based on the set of requires arguments passed in ala
+'c', 'b', 'a', 'hello', C, None]``.  Every object supplied as a
+"requires" argument to either the ``resolve`` or ``adapt`` method of a
+component registry has its requires values computed this way.  We then
+find a component based on the set of requires arguments passed in ala
 :ref:`lookup_ordering`.
 
 Comparing :mod:`repoze.component` to :term:`zope.component`
