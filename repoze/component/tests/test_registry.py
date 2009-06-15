@@ -466,21 +466,33 @@ class TestProvidedBy(unittest.TestCase):
         from repoze.component import providedby
         return providedby(obj)
 
-    def test_newstyle_class(self):
+    def test_newstyle_class_with_provides(self):
         from repoze.component import provides
         class Foo(object):
             provides('a', 'b')
         result = self._callFUT(Foo)
-        self.assertEqual(list(result), ['a', 'b', type(Foo), None])
+        self.assertEqual(list(result), ['a', 'b', Foo, None])
 
-    def test_oldstyle_class(self):
+    def test_newstyle_class_without_provides(self):
+        class Foo(object):
+            pass
+        result = self._callFUT(Foo)
+        self.assertEqual(list(result), [Foo, None])
+
+    def test_oldstyle_class_with_provides(self):
         from repoze.component import provides
         class Foo:
             provides('a', 'b')
         result = self._callFUT(Foo)
-        self.assertEqual(list(result), ['a', 'b', type(Foo), None])
+        self.assertEqual(list(result), ['a', 'b', Foo, None])
 
-    def test_oldstyle_instance(self):
+    def test_oldstyle_class_without_provides(self):
+        class Foo:
+            pass
+        result = self._callFUT(Foo)
+        self.assertEqual(list(result), [Foo, None])
+
+    def test_oldstyle_instance_withprovides(self):
         from repoze.component import provides
         class Foo:
             provides('a', 'b')
@@ -488,13 +500,27 @@ class TestProvidedBy(unittest.TestCase):
         result = self._callFUT(foo)
         self.assertEqual(list(result), ['a', 'b', Foo, None])
 
-    def test_newstyle_instance(self):
+    def test_oldstyle_instance_withoutprovides(self):
+        class Foo:
+            pass
+        foo = Foo()
+        result = self._callFUT(foo)
+        self.assertEqual(list(result), [Foo, None])
+
+    def test_newstyle_instance_withprovides(self):
         from repoze.component import provides
         class Foo(object):
             provides('a', 'b')
         foo = Foo()
         result = self._callFUT(foo)
         self.assertEqual(list(result), ['a', 'b', Foo, None])
+
+    def test_newstyle_instance_withoutprovides(self):
+        class Foo(object):
+            pass
+        foo = Foo()
+        result = self._callFUT(foo)
+        self.assertEqual(list(result), [Foo, None])
 
     def test_string(self):
         result = self._callFUT('foo')

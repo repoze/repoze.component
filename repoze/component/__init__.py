@@ -1,4 +1,5 @@
 from repoze.lru import lru_cache
+from repoze.lru import LRUCache
 
 import inspect
 import sys
@@ -24,6 +25,12 @@ def cached_product(*args):
     return tuple(product(*args))
     
 _marker = object()
+_notfound = object()
+
+class DumbCache(dict):
+    def put(self, k, v):
+        self[k] = v
+    
 
 class Registry(object):
     """ A component registry.  The component registry supports the
@@ -34,6 +41,7 @@ class Registry(object):
     adapter registry by using its ``resolve`` and ``adapt`` methods."""
     def __init__(self, dict=None, **kwargs):
         self.data = {}
+        self._lookupcache = DumbCache()
         if dict is not None:
             self.update(dict)
         if len(kwargs):
@@ -65,9 +73,11 @@ class Registry(object):
         return result
 
     def __setitem__(self, key, val):
+        self._lookupcache.clear()
         self.register(key, val)
 
     def __delitem__(self, key):
+        self._lookupcache.clear()
         notrequires = self.data.get((), {})
         try:
             del notrequires[(key, '')]
@@ -75,6 +85,7 @@ class Registry(object):
             raise KeyError(key)
 
     def clear(self):
+        self._lookupcache.clear()
         notrequires = self.data.get((), {})
         for k, v in notrequires.items():
             provides, name = k
@@ -119,6 +130,7 @@ class Registry(object):
         return d
 
     def update(self, dict=None, **kw):
+        self._lookupcache.clear()
         if dict is not None:
             for k, v in dict.items():
                 self.register(k, v)
@@ -126,6 +138,7 @@ class Registry(object):
             self.register(k, v)
 
     def setdefault(self, key, failobj=None):
+        self._lookupcache.clear()
         val = self.lookup(key, default=failobj)
         if val is failobj:
             self[key] = failobj
@@ -135,6 +148,7 @@ class Registry(object):
         return iter(self._dictmembers)
 
     def pop(self, key, *args):
+        self._lookupcache.clear()
         if len(args) > 1:
             raise TypeError, "pop expected at most 2 arguments, got "\
                               + repr(1 + len(args))
@@ -148,6 +162,7 @@ class Registry(object):
         return value
 
     def popitem(self):
+        self._lookupcache.clear()
         try:
             k, v = self.iteritems().next()
         except StopIteration:
@@ -157,6 +172,7 @@ class Registry(object):
 
     def register(self, provides, component, *requires, **kw):
         """ Register a component """
+        self._lookupcache.clear()
         name = kw.get('name', '')
         info = self.data.setdefault(tuple(requires), {})
         info[(provides, name)] =  component
@@ -177,16 +193,27 @@ class Registry(object):
         reg = self.data
 
         combinations = cached_product(*requires)
- 
-        for combo in combinations:
-            try:
-                result = reg[combo]
-                key = (provides, name)
-                return result[key]
-            except KeyError:
-                pass
+        cachekey = (provides, combinations, name)
+        cached = self._lookupcache.get(cachekey, _marker)
 
-        return kw.get('default', None)
+        if cached is _marker:
+            for combo in combinations:
+                try:
+                    result = reg[combo]
+                    key = (provides, name)
+                    val = result[key]
+                    self._lookupcache.put(cachekey, val)
+                    return val
+                except KeyError:
+                    pass
+
+            self._lookupcache.put(cachekey, _notfound)
+            cached = _notfound
+            
+        if cached is _notfound:
+            return kw.get('default', None)
+
+        return cached
 
     def resolve(self, provides, *objects, **kw):
         requires = [ providedby(obj) for obj in objects ]
@@ -199,33 +226,10 @@ class Registry(object):
 def providedby(obj):
     """ Return a sequence of component types provided by obj ordered
     most specific to least specific.  """
-    is_class = hasattr(obj, '__bases__')
-
-    if is_class:
-        lookup = inspect.getmro(obj)
-    else:
-        lookup = (obj,) + inspect.getmro(obj.__class__)
-
-    provides = []
-
-    for base in lookup:
-        try:
-            types = base.__component_types__
-        except AttributeError:
-            continue
-        for item in types:
-            if not item in provides:
-                provides.append(item)
-
     try:
-        provides.append(obj.__class__)
+        return obj.__component_types__
     except AttributeError:
-        provides.append(type(obj))
-
-    if not None in provides:
-        provides.append(None)
-
-    return tuple(provides)
+        return hasattr(obj, '__bases__') and (obj,None) or (obj.__class__,None)
 
 def _classprovides_advice(cls):
     types, object_provides = cls.__dict__['__implements_advice_data__']
@@ -234,7 +238,20 @@ def _classprovides_advice(cls):
     return cls
 
 def object_provides(object, *types):
-    object.__component_types__ = types
+    isclass = hasattr(object, '__bases__')
+    provides = []
+    if isclass:
+        try:
+            provides.extend(object.__component_types__)
+        except AttributeError:
+            provides.extend((object, None))
+    else:
+        try:
+            provides.extend(object.__component_types__)
+        except AttributeError:
+            provides.extend(object.__class__, None)
+    provides = tuple([ x for x in provides if x not in types ])
+    object.__component_types__ = types + provides
     
 def provides(*types):
     frame = sys._getframe(1)
