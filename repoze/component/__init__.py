@@ -1,9 +1,7 @@
 from repoze.lru import lru_cache
 from repoze.lru import LRUCache
 
-import inspect
 import sys
-import types
 
 from repoze.component.advice import addClassAdvisor
 
@@ -27,11 +25,6 @@ def cached_product(*args):
 _marker = object()
 _notfound = object()
 
-class DumbCache(dict):
-    def put(self, k, v):
-        self[k] = v
-    
-
 class Registry(object):
     """ A component registry.  The component registry supports the
     Python mapping interface and can be used as you might a regular
@@ -41,7 +34,7 @@ class Registry(object):
     adapter registry by using its ``resolve`` and ``adapt`` methods."""
     def __init__(self, dict=None, **kwargs):
         self.data = {}
-        self._lookupcache = DumbCache()
+        self._lookupcache = LRUCache(1000)
         if dict is not None:
             self.update(dict)
         if len(kwargs):
@@ -232,26 +225,19 @@ def providedby(obj):
         return hasattr(obj, '__bases__') and (obj,None) or (obj.__class__,None)
 
 def _classprovides_advice(cls):
-    types, object_provides = cls.__dict__['__implements_advice_data__']
+    types, add_types = cls.__dict__['__implements_advice_data__']
     del cls.__implements_advice_data__
-    object_provides(cls, *types)
+    add_types(cls, *types)
     return cls
 
-def object_provides(object, *types):
-    isclass = hasattr(object, '__bases__')
-    provides = []
-    if isclass:
-        try:
-            provides.extend(object.__component_types__)
-        except AttributeError:
-            provides.extend((object, None))
-    else:
-        try:
-            provides.extend(object.__component_types__)
-        except AttributeError:
-            provides.extend(object.__class__, None)
-    provides = tuple([ x for x in provides if x not in types ])
-    object.__component_types__ = types + provides
+def add_types(obj, *types):
+    try:
+        alreadyprovides = obj.__component_types__
+    except AttributeError:
+        alreadyprovides = ( hasattr(obj, '__bases__') and (obj, None) or
+                            (obj.__class__, None) )
+    alreadyprovides = tuple([ x for x in alreadyprovides if x not in types ])
+    obj.__component_types__ = types + alreadyprovides
     
 def provides(*types):
     frame = sys._getframe(1)
@@ -261,13 +247,13 @@ def provides(*types):
         if not types:
             raise TypeError('provides must be called with an object')
         ob, types = types[0], types[1:]
-        object_provides(ob, *types)
+        add_types(ob, *types)
         return ob
     else:
         # called from within a class definition
         if '__implements_advice_data__' in locals:
             raise TypeError(
                 "provides can be used only once in a class definition.")
-        locals['__implements_advice_data__'] = types, object_provides
+        locals['__implements_advice_data__'] = types, add_types
         addClassAdvisor(_classprovides_advice, depth=2)
     
