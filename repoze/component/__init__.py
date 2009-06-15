@@ -1,3 +1,5 @@
+from repoze.lru import lru_cache
+
 import inspect
 try:
     from itertools import product # 2.6+
@@ -11,6 +13,10 @@ except ImportError:
             result = [x+[y] for x in result for y in pool]
         for prod in result:
             yield tuple(prod)
+
+@lru_cache(1000)
+def cached_product(*args, **kwds):
+    return tuple(product(*args, **kwds))
     
 _marker = object()
 
@@ -153,13 +159,13 @@ class Registry(object):
     def lookup(self, provides, *requires, **kw):
         name = kw.get('name', '')
         default = kw.get('default', None)
-
+ 
         req = []
         for val in requires:
             if not hasattr(val, '__iter__'):
-                req.append([val, None])
+                req.append((val, None))
             else:
-                req.append(list(val) + [None])
+                req.append(tuple(val) + (None,))
 
         def _resolve(r):
             result = reg.get(r, _marker)
@@ -170,7 +176,7 @@ class Registry(object):
                     return val
             return _marker
 
-        combinations = list(product(*req))
+        combinations = cached_product(*req)
         reg = self.data
         defer = []
 

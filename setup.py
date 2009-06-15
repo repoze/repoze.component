@@ -25,6 +25,8 @@ here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.txt')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
+requires = ['repoze.lru']
+
 setup(name='repoze.component',
       version=__version__,
       description='A Python component system',
@@ -42,8 +44,8 @@ setup(name='repoze.component',
       include_package_data=True,
       namespace_packages=['repoze'],
       zip_safe=False,
-      tests_require = [],
-      install_requires = [],
+      tests_require = requires,
+      install_requires = requires,
       test_suite="repoze.component",
       entry_points = """\
       [repoze.configuration.directive]
