@@ -19,6 +19,9 @@ configuration values and, possibly, implementation objects.  You can
 expose a :mod:`repoze.plugin` configuration file to an end user to
 configure or customize the application as necessary.
 
+:mod:`repoze.component` also provides a generic event subscription and
+notification system.
+
 Table of Contents
 -----------------
 
