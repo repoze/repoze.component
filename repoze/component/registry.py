@@ -173,7 +173,8 @@ class Registry(object):
 
     def subscribe(self, fn, *requires, **kw):
         name = kw.get('name', '')
-        subscribers = self._lookup(_subscribers, name, _marker, *requires)
+        newkw = {'name':name, 'default':_marker}
+        subscribers = self.lookup(_subscribers, *requires, **newkw)
         if subscribers is _marker:
             subscribers = []
         subscribers.append(fn)
@@ -181,7 +182,8 @@ class Registry(object):
 
     def unsubscribe(self, fn, *requires, **kw):
         name = kw.get('name', '')
-        subscribers = self._lookup(_subscribers, name, _marker, *requires)
+        newkw = {'name':name, 'default':_marker}
+        subscribers = self.lookup(_subscribers, *requires, **newkw)
         if subscribers is _marker:
             subscribers = []
         if fn in subscribers:
