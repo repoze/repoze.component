@@ -477,7 +477,7 @@ class TestProvidedBy(unittest.TestCase):
         class Foo(object):
             pass
         result = self._callFUT(Foo)
-        self.assertEqual(list(result), [type(Foo), None])
+        self.assertEqual(list(result), [Foo, None])
 
     def test_oldstyle_class_with_provides(self):
         from repoze.component import provides
@@ -487,11 +487,10 @@ class TestProvidedBy(unittest.TestCase):
         self.assertEqual(list(result), ['a', 'b', Foo, None])
 
     def test_oldstyle_class_without_provides(self):
-        import types
         class Foo:
             pass
         result = self._callFUT(Foo)
-        self.assertEqual(list(result), [types.ClassType, None])
+        self.assertEqual(list(result), [Foo, None])
 
     def test_oldstyle_instance_withprovides(self):
         from repoze.component import provides
@@ -539,6 +538,63 @@ class TestProvidedBy(unittest.TestCase):
         import types
         result = self._callFUT(None)
         self.assertEqual(list(result), [types.NoneType, None])
+
+class TestDirectlyProvidedBy(unittest.TestCase):
+    def _callFUT(self, obj):
+        from repoze.component import directlyprovidedby
+        return directlyprovidedby(obj)
+
+    def test_it_withtypes(self):
+        class Dummy:
+            pass
+        inst = Dummy()
+        inst.__component_types__ = ('123', '456')
+        self.assertEqual(self._callFUT(inst), ('123', '456'))
+
+    def test_it_notypes(self):
+        class Dummy:
+            pass
+        inst = Dummy()
+        self.assertEqual(self._callFUT(inst), ())
+    
+
+class TestProvidesAsFunction(unittest.TestCase):
+    def _callFUT(self, obj, *types):
+        from repoze.component import provides
+        provides(obj, *types)
+
+    def test_multiple_calls(self):
+        class Foo(object):
+            pass
+        foo = Foo()
+        self._callFUT(foo, 'abc', 'def')
+        self._callFUT(foo, 'ghi')
+        self.assertEqual(foo.__component_types__, ('ghi', 'abc', 'def'))
+
+    def test_provide_no_types(self):
+        from repoze.component import provides
+        self.assertRaises(TypeError, provides)
+
+class TestProvidesInsideClass(unittest.TestCase):
+    def test_class_inheritance(self):
+        from repoze.component import provides
+        class Foo(object):
+            provides('abc', 'def')
+        class Foo2(Foo):
+            provides('ghi')
+        self.assertEqual(Foo2.__component_types__, ('ghi', 'abc', 'def'))
+
+    def test_morethanonce(self):
+        from repoze.component import provides
+        class Foo(object):
+            provides('abc', 'def')
+            try:
+                provides('ghi')
+            except TypeError:
+                pass
+            else:
+                raise AssertionError('wrong')
+        
 
 from repoze.component import provides
 

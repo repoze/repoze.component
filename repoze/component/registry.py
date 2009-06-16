@@ -181,8 +181,9 @@ class Registry(object):
         return self._lookup(provides, *req, **kw)
 
     def _lookup(self, provides, *requires, **kw):
-        # each requires argument *must* be a tuple composed of hashable
-        # objects
+        # each requires argument *must* be a tuple composed of
+        # hashable objects; to match generic registrations, each tuple
+        # should contain a None.
         name = kw.get('name', '')
         reg = self.data
 
@@ -217,11 +218,47 @@ class Registry(object):
         factory = self.resolve(provides, *objects, **kw)
         return factory(*objects)
 
+def directlyprovidedby(obj):
+    try:
+        return obj.__component_types__
+    except AttributeError:
+        return ()
+
+def providedby(obj):
+    """ Return a sequence of component types provided by obj ordered
+    most specific to least specific.  """
+    direct = getattr(obj, '__component_types__', ())
+    try:
+        obj.__bases__
+        # obj is a class
+        return direct + (obj, None)
+    except AttributeError:
+        # obj is not a class
+        return direct + (obj.__class__, None)
+
 def provides(*types):
+    """ Decorate an object with one or more types.
+
+    May be used as a function to decorate an instance:
+
+    provides(ob, 'type1', 'type2')
+
+    .. or as a class decorator (Python 2.6+):
+
+    @provides('type1', type2')
+    class Foo:
+        pass
+
+    .. or inside a class definition:
+
+    class Foo(object):
+        provides('type1', 'type2')
+    """
     frame = sys._getframe(1)
     locals = frame.f_locals
     if (locals is frame.f_globals) or ('__module__' not in locals):
         # not called from within a class definition
+        # (as a class decorator or to decorate an instance)
         if not types:
             raise TypeError('provides must be called with an object')
         ob, types = types[0], types[1:]
@@ -235,30 +272,14 @@ def provides(*types):
         locals['__implements_advice_data__'] = types
         addClassAdvisor(_classprovides_advice, depth=2)
 
-def providedby(obj):
-    """ Return a sequence of component types provided by obj ordered
-    most specific to least specific.  """
-    types = getattr(obj, '__component_types__', None)
-    if types is not None:
-        return types
-    try:
-        return (obj.__class__, None)
-    except AttributeError:
-        return (type(obj), None)
-
 def _add_types(obj, *types):
-    alreadyprovides = providedby(obj)
+    alreadyprovides = directlyprovidedby(obj)
     alreadyprovides = tuple([ x for x in alreadyprovides if x not in types ])
     obj.__component_types__ = types + alreadyprovides
 
 def _classprovides_advice(cls):
     types = cls.__dict__['__implements_advice_data__']
     del cls.__implements_advice_data__
-    alreadyprovides = getattr(cls, '__component_types__', None)
-    if alreadyprovides is None:
-        alreadyprovides = (cls, None)
-    provides = tuple([ x for x in alreadyprovides if x not in types ])
-    provides = types + provides
-    cls.__component_types__ = provides
+    _add_types(cls, *types)
     return cls
 
