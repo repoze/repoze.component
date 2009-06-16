@@ -246,6 +246,59 @@ class TestRegistry(unittest.TestCase):
         registry.notify(what)
         # doesn't blow up
 
+    def test_lookup_default(self):
+        registry = self._makeOne()
+        result = registry.lookup('a', default=registry)
+        self.assertEqual(result, registry)
+        
+    def test_lookup_nodefault(self):
+        registry = self._makeOne()
+        self.assertRaises(LookupError, registry.lookup, 'a')
+
+    def test_lookup_named(self):
+        registry = self._makeOne()
+        registry.register('test', 'registered', 'abc', name='yup')
+        result = registry.lookup('test', 'abc', name='yup')
+        self.assertEqual(result, 'registered')
+
+    def test_resolve_default(self):
+        registry = self._makeOne()
+        result = registry.resolve('a', default=registry)
+        self.assertEqual(result, registry)
+        
+    def test_resolve_nodefault(self):
+        registry = self._makeOne()
+        self.assertRaises(LookupError, registry.resolve, 'a')
+
+    def test_resolve_named(self):
+        registry = self._makeOne()
+        registry.register('test', 'registered', 'abc', name='yup')
+        class ABC:
+            __component_types__ = ('abc',)
+        abc = ABC()
+        result = registry.resolve('test', abc, name='yup')
+        self.assertEqual(result, 'registered')
+
+    def test_adapt_default(self):
+        registry = self._makeOne()
+        result = registry.adapt('a', default=registry)
+        self.assertEqual(result, registry)
+
+    def test_adapt_nodefault(self):
+        registry = self._makeOne()
+        self.assertRaises(LookupError, registry.adapt, 'a')
+        
+    def test_adapt_named(self):
+        registry = self._makeOne()
+        def callback(abc):
+            return 'registered'
+        registry.register('test', callback, 'abc', name='yup')
+        class ABC:
+            __component_types__ = ('abc',)
+        abc = ABC()
+        result = registry.adapt('test', abc, name='yup')
+        self.assertEqual(result, 'registered')
+
 class TestRegistryFunctional(unittest.TestCase):
     def _getTargetClass(self):
         from repoze.component import Registry
@@ -326,9 +379,9 @@ class TestRegistryFunctional(unittest.TestCase):
         eq(look('fight', ('deckard', 'barris'), 'luckman'),
            'barrisluckmanvalue')
         eq(look('bladerunner', (None,), ('deckard', 'barris')), 'deckardvalue')
-        eq(look('friend', 'luckman'), None)
-        eq(look('bladerunner', 'deckard', ('luckman',)), None)
-        eq(look('bladerunner', None, None), None)
+        eq(look('friend', 'luckman', default=None), None)
+        eq(look('bladerunner', 'deckard', ('luckman',), default=None), None)
+        eq(look('bladerunner', None, None, default=None), None)
         eq(look('bladerunner', 'barris', 'deckard'), 'deckardvalue')
         eq(look('bladerunner', 'luckman', 'deckard'), 'deckardvalue')
 
@@ -347,11 +400,11 @@ class TestRegistryFunctional(unittest.TestCase):
         eq(resolve('fight', InheritsBarris, Luckman), 'barrisluckmanvalue')
         eq(resolve('fight', DeckardBarris, Luckman), 'barrisluckmanvalue')
         eq(resolve('bladerunner', None, DeckardBarris), 'deckardvalue')
-        eq(resolve('friend', Luckman), None)
-        eq(resolve('bladerunner', Deckard, Luckman), None)
+        eq(resolve('friend', Luckman, default=None), None)
+        eq(resolve('bladerunner', Deckard, Luckman, default=None), None)
         eq(resolve('bladerunner', Luckman, Deckard), 'deckardvalue')
         eq(resolve('bladerunner', Barris, Deckard), 'deckardvalue')
-        eq(resolve('bladerunner', None, None), None)
+        eq(resolve('bladerunner', None, None, default=None), None)
                             
     def test_register_and_resolve_instances(self):
         registry = self._makeRegistry()
@@ -372,11 +425,11 @@ class TestRegistryFunctional(unittest.TestCase):
         eq(resolve('fight', inheritsbarris, luckman), 'barrisluckmanvalue')
         eq(resolve('fight', deckardbarris, luckman), 'barrisluckmanvalue')
         eq(resolve('bladerunner', None, deckardbarris), 'deckardvalue')
-        eq(resolve('friend', luckman), None)
-        eq(resolve('bladerunner', deckard, luckman), None)
+        eq(resolve('friend', luckman, default=None), None)
+        eq(resolve('bladerunner', deckard, luckman, default=None), None)
         eq(resolve('bladerunner', luckman, deckard), 'deckardvalue')
         eq(resolve('bladerunner', barris, deckard), 'deckardvalue')
-        eq(resolve('bladerunner', None, None), None)
+        eq(resolve('bladerunner', None, None, default=None), None)
 
     def test_register_and_resolve_instances_withdict(self):
         registry = self._makeRegistry()
@@ -403,11 +456,11 @@ class TestRegistryFunctional(unittest.TestCase):
         eq(resolve('fight', inheritsbarris, luckman), 'barrisluckmanvalue')
         eq(resolve('fight', deckardbarris, luckman), 'barrisluckmanvalue')
         eq(resolve('bladerunner', None, deckardbarris), 'deckardvalue')
-        eq(resolve('friend', luckman), None)
-        eq(resolve('bladerunner', deckard, luckman), None)
+        eq(resolve('friend', luckman, default=None), None)
+        eq(resolve('bladerunner', deckard, luckman, default=None), None)
         eq(resolve('bladerunner', luckman, deckard), 'deckardvalue')
         eq(resolve('bladerunner', barris, deckard), 'deckardvalue')
-        eq(resolve('bladerunner', None, None), None)
+        eq(resolve('bladerunner', None, None, default=None), None)
 
     def test_register_and_resolve_oldstyle_classes(self):
         registry = self._makeRegistry()
@@ -421,11 +474,11 @@ class TestRegistryFunctional(unittest.TestCase):
         eq(resolve('fight', InheritsBarris, Luckman), 'barrisluckmanvalue')
         eq(resolve('fight', DeckardBarris, Luckman), 'barrisluckmanvalue')
         eq(resolve('bladerunner', None, DeckardBarris), 'deckardvalue')
-        eq(resolve('friend', Luckman), None)
-        eq(resolve('bladerunner', Deckard, Luckman), None)
+        eq(resolve('friend', Luckman, default=None), None)
+        eq(resolve('bladerunner', Deckard, Luckman, default=None), None)
         eq(resolve('bladerunner', Luckman, Deckard), 'deckardvalue')
         eq(resolve('bladerunner', Barris, Deckard), 'deckardvalue')
-        eq(resolve('bladerunner', None, None), None)
+        eq(resolve('bladerunner', None, None, default=None), None)
 
     def test_register_and_resolve_oldstyle_instances(self):
         registry = self._makeRegistry()
@@ -446,11 +499,11 @@ class TestRegistryFunctional(unittest.TestCase):
         eq(resolve('fight', inheritsbarris, luckman), 'barrisluckmanvalue')
         eq(resolve('fight', deckardbarris, luckman), 'barrisluckmanvalue')
         eq(resolve('bladerunner', None, deckardbarris), 'deckardvalue')
-        eq(resolve('friend', luckman), None)
-        eq(resolve('bladerunner', deckard, luckman), None)
+        eq(resolve('friend', luckman, default=None), None)
+        eq(resolve('bladerunner', deckard, luckman, default=None), None)
         eq(resolve('bladerunner', luckman, deckard), 'deckardvalue')
         eq(resolve('bladerunner', barris, deckard), 'deckardvalue')
-        eq(resolve('bladerunner', None, None), None)
+        eq(resolve('bladerunner', None, None, default=None), None)
 
     def test_register_and_resolve_oldstyle_instances_withdict(self):
         registry = self._makeRegistry()
@@ -483,11 +536,11 @@ class TestRegistryFunctional(unittest.TestCase):
         eq(resolve('fight', inheritsbarris, luckman), 'barrisluckmanvalue')
         eq(resolve('fight', deckardbarris, luckman), 'barrisluckmanvalue')
         eq(resolve('bladerunner', None, deckardbarris), 'deckardvalue')
-        eq(resolve('friend', luckman), None)
-        eq(resolve('bladerunner', deckard, luckman), None)
+        eq(resolve('friend', luckman, default=None), None)
+        eq(resolve('bladerunner', deckard, luckman, default=None), None)
         eq(resolve('bladerunner', luckman, deckard), 'deckardvalue')
         eq(resolve('bladerunner', barris, deckard), 'deckardvalue')
-        eq(resolve('bladerunner', None, None), None)
+        eq(resolve('bladerunner', None, None, default=None), None)
 
     def test_adapt(self):
         registry = self._makeRegistry()

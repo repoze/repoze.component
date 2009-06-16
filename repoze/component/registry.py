@@ -36,7 +36,7 @@ class Registry(object):
     adapter registry by using its ``resolve`` and ``adapt`` methods."""
     def __init__(self, dict=None, **kwargs):
         self.data = {}
-        self._lookupcache = LRUCache(1000)
+        self._lkpcache = LRUCache(1000)
         if dict is not None:
             self.update(dict)
         if len(kwargs):
@@ -72,7 +72,7 @@ class Registry(object):
         self.register(key, val)
 
     def __delitem__(self, key):
-        self._lookupcache.clear()
+        self._lkpcache.clear()
         notrequires = self.data.get((), {})
         try:
             del notrequires[(key, '')]
@@ -80,7 +80,7 @@ class Registry(object):
             raise KeyError(key)
 
     def clear(self):
-        self._lookupcache.clear()
+        self._lkpcache.clear()
         notrequires = self.data.get((), {})
         for k, v in notrequires.items():
             provides, name = k
@@ -132,7 +132,7 @@ class Registry(object):
             self.register(k, v)
 
     def setdefault(self, key, failobj=None):
-        self._lookupcache.clear()
+        self._lkpcache.clear()
         val = self.lookup(key, default=failobj)
         if val is failobj:
             self[key] = failobj
@@ -164,7 +164,7 @@ class Registry(object):
 
     def register(self, provides, component, *requires, **kw):
         """ Register a component """
-        self._lookupcache.clear()
+        self._lkpcache.clear()
         if provides is _subscribers:
             self.listener_registered = True
         name = kw.get('name', '')
@@ -172,15 +172,17 @@ class Registry(object):
         info[(provides, name)] =  component
 
     def subscribe(self, fn, *requires, **kw):
-        subscribers = self.lookup(_subscribers, *requires, **kw)
-        if subscribers is None:
+        name = kw.get('name', '')
+        subscribers = self._lookup(_subscribers, name, _marker, *requires)
+        if subscribers is _marker:
             subscribers = []
         subscribers.append(fn)
         self.register(_subscribers, subscribers, *requires, **kw)
 
     def unsubscribe(self, fn, *requires, **kw):
-        subscribers = self.lookup(_subscribers, *requires, **kw)
-        if subscribers is None:
+        name = kw.get('name', '')
+        subscribers = self._lookup(_subscribers, name, _marker, *requires)
+        if subscribers is _marker:
             subscribers = []
         if fn in subscribers:
             subscribers.remove(fn)
@@ -201,18 +203,24 @@ class Registry(object):
                 req.append((val, None))
             else:
                 req.append(tuple(val) + (None,))
-        return self._lookup(provides, *req, **kw)
+        name = kw.get('name', '')
+        result = self._lookup(provides, name, _marker, *req)
+        if result is _marker:
+            try:
+                return kw['default']
+            except KeyError:
+                raise LookupError('Cannot look up')
+        return result
 
-    def _lookup(self, provides, *requires, **kw):
+    def _lookup(self, provides, name, default, *requires):
         # each requires argument *must* be a tuple composed of
         # hashable objects; to match generic registrations, each tuple
         # should contain a None.
-        name = kw.get('name', '')
         reg = self.data
 
         combinations = cached_product(*requires)
         cachekey = (provides, combinations, name)
-        cached = self._lookupcache.get(cachekey, _marker)
+        cached = self._lkpcache.get(cachekey, _marker)
 
         if cached is _marker:
             for combo in combinations:
@@ -220,26 +228,40 @@ class Registry(object):
                     result = reg[combo]
                     key = (provides, name)
                     val = result[key]
-                    self._lookupcache.put(cachekey, val)
+                    self._lkpcache.put(cachekey, val)
                     return val
                 except KeyError:
                     pass
 
-            self._lookupcache.put(cachekey, _notfound)
+            self._lkpcache.put(cachekey, _notfound)
             cached = _notfound
             
         if cached is _notfound:
-            return kw.get('default', None)
+            return default
 
         return cached
 
     def resolve(self, provides, *objects, **kw):
         requires = [ providedby(obj) for obj in objects ]
-        return self._lookup(provides, *requires, **kw)
+        name = kw.get('name', '')
+        value = self._lookup(provides, name, _marker, *requires)
+        if value is _marker:
+            try:
+                return kw['default']
+            except KeyError:
+                raise LookupError('Could not resolve')
+        return value
 
     def adapt(self, provides, *objects, **kw):
-        factory = self.resolve(provides, *objects, **kw)
-        return factory(*objects)
+        requires = [ providedby(obj) for obj in objects ]
+        name = kw.get('name', '')
+        adapter = self._lookup(provides, name, _marker, *requires)
+        if adapter is _marker:
+            try:
+                return kw['default']
+            except KeyError:
+                raise LookupError('Could not adapt')
+        return adapter(*objects)
 
 def directlyprovidedby(obj):
     try:
