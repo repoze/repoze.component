@@ -186,6 +186,8 @@ class Registry(object):
             subscribers.remove(fn)
 
     def notify(self, *objects, **kw):
+        if not self.listener_registered:
+            return # optimization
         default = []
         subscribers = self.resolve(_subscribers, *objects, **kw)
         if subscribers is not None:

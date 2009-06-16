@@ -222,6 +222,30 @@ class TestRegistry(unittest.TestCase):
         self.assertEqual(what.called, True)
         self.assertEqual(what.called_again, True)
 
+    def test_notify_withname(self):
+        from repoze.component.registry import _subscribers
+        def subscriber(what):
+            what.called = True
+        def subscriber2(what):
+            what.called_again = True
+        class What:
+            __component_types__ = ('abc',)
+        what = What()
+        registry = self._makeOne()
+        registry.register(_subscribers, [subscriber, subscriber2], 'abc',
+                          name='yup')
+        registry.notify(what, name='yup')
+        self.assertEqual(what.called, True)
+        self.assertEqual(what.called_again, True)
+
+    def test_notify_nolisteners(self):
+        class What:
+            __component_types__ = ('abc',)
+        what = What()
+        registry = self._makeOne()
+        registry.notify(what)
+        # doesn't blow up
+
 class TestRegistryFunctional(unittest.TestCase):
     def _getTargetClass(self):
         from repoze.component import Registry
