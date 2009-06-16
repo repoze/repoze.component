@@ -714,6 +714,134 @@ class TestProvidesInsideClass(unittest.TestCase):
             else:
                 raise AssertionError('wrong')
         
+class TestAugmentedProduct(unittest.TestCase):
+    def _callFUT(self, arg, default_list):
+        from repoze.component.registry import augmented_product
+        return augmented_product(arg, default_list)
+    
+    def test_withdefaults(self):
+        expected = [(1, 4, 7),
+                    (1, 4, 8),
+                    (1, 4, 9),
+                    (1, 5, 7),
+                    (1, 5, 8),
+                    (1, 5, 9),
+                    (1, 6, 7),
+                    (1, 6, 8),
+                    (1, 6, 9),
+                    (2, 4, 7),
+                    (2, 4, 8),
+                    (2, 4, 9),
+                    (2, 5, 7),
+                    (2, 5, 8),
+                    (2, 5, 9),
+                    (2, 6, 7),
+                    (2, 6, 8),
+                    (2, 6, 9),
+                    (3, 4, 7),
+                    (3, 4, 8),
+                    (3, 4, 9),
+                    (3, 5, 7),
+                    (3, 5, 8),
+                    (3, 5, 9),
+                    (3, 6, 7),
+                    (3, 6, 8),
+                    (3, 6, 9),
+                    (1, 4, 'class3'),
+                    (1, 5, 'class3'),
+                    (1, 6, 'class3'),
+                    (2, 4, 'class3'),
+                    (2, 5, 'class3'),
+                    (2, 6, 'class3'),
+                    (3, 4, 'class3'),
+                    (3, 5, 'class3'),
+                    (3, 6, 'class3'),
+                    (1, 'class2', 7),
+                    (1, 'class2', 8),
+                    (1, 'class2', 9),
+                    (2, 'class2', 7),
+                    (2, 'class2', 8),
+                    (2, 'class2', 9),
+                    (3, 'class2', 7),
+                    (3, 'class2', 8),
+                    (3, 'class2', 9),
+                    ('class1', 4, 7),
+                    ('class1', 4, 8),
+                    ('class1', 4, 9),
+                    ('class1', 5, 7),
+                    ('class1', 5, 8),
+                    ('class1', 5, 9),
+                    ('class1', 6, 7),
+                    ('class1', 6, 8),
+                    ('class1', 6, 9),
+                    (1, 'class2', 'class3'),
+                    (2, 'class2', 'class3'),
+                    (3, 'class2', 'class3'),
+                    ('class1', 4, 'class3'),
+                    ('class1', 5, 'class3'),
+                    ('class1', 6, 'class3'),
+                    ('class1', 'class2', 7),
+                    ('class1', 'class2', 8),
+                    ('class1', 'class2', 9),
+                    (1, None, None),
+                    (2, None, None),
+                    (3, None, None),
+                    (None, 4, None),
+                    (None, 5, None),
+                    (None, 6, None),
+                    (None, None, 7),
+                    (None, None, 8),
+                    (None, None, 9),
+                    ('class1', 'class2', 'class3'),
+                    ('class1', 'class2', None),
+                    ('class1', None, 'class3'),
+                    ('class1', None, None),
+                    (None, 'class2', 'class3'),
+                    (None, 'class2', None),
+                    (None, None, 'class3'),
+                    (None, None, None)]
+        
+        a = (1,2,3)
+        b = (4,5,6)
+        c = (7,8,9)
+        defaults = (('class1', None), ('class2', None), ('class3', None))
+        result = list(self._callFUT((a, b, c), defaults))
+        self.assertEqual(result, expected)
+
+    def test_nodefaults(self):
+        expected = [(1, 4, 7),
+                    (1, 4, 8),
+                    (1, 4, 9),
+                    (1, 5, 7),
+                    (1, 5, 8),
+                    (1, 5, 9),
+                    (1, 6, 7),
+                    (1, 6, 8),
+                    (1, 6, 9),
+                    (2, 4, 7),
+                    (2, 4, 8),
+                    (2, 4, 9),
+                    (2, 5, 7),
+                    (2, 5, 8),
+                    (2, 5, 9),
+                    (2, 6, 7),
+                    (2, 6, 8),
+                    (2, 6, 9),
+                    (3, 4, 7),
+                    (3, 4, 8),
+                    (3, 4, 9),
+                    (3, 5, 7),
+                    (3, 5, 8),
+                    (3, 5, 9),
+                    (3, 6, 7),
+                    (3, 6, 8),
+                    (3, 6, 9),
+                    ]
+        a = (1,2,3)
+        b = (4,5,6)
+        c = (7,8,9)
+        result = list(self._callFUT((a, b, c), None))
+        self.assertEqual(result, expected)
 
 from repoze.component import provides
 

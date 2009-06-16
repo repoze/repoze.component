@@ -19,10 +19,47 @@ except ImportError:
         for prod in result:
             yield tuple(prod)
 
+def augmented_product(args, default_list):
+    direct = product(*args)
+    # product out our directly supplied args
+    for combo in direct:
+        yield combo
+    # defaults come after any directly supplied product combo
+    if default_list:
+        ldef = len(default_list[0])
+        largs = len(args)
+        enumerated = list(enumerate(default_list))
+        rev_enumerated = reversed(enumerated)
+        # we replace holes in the supplied with the default, e.g.
+        # one, two, <default>
+        # one, <default>, three
+        # <default>, two, three
+        for i in range(ldef):
+            for num, defaults in rev_enumerated:
+                default = defaults[i]
+                newargs = list(args)
+                newargs[num] = (default,)
+                for combo in product(*newargs):
+                    yield combo
+        # we replace holes in the defaults with the supplied, e.g.
+        # one, <default>, <default>
+        # <default>, two, <default>
+        # <default>, <default>, three
+        for i in range(ldef):
+            defaultargs = [ (default[i],) for default in default_list ]
+            for j in range(largs):
+                newargs = list(defaultargs)
+                newargs[j] = args[j]
+                for combo in tuple(product(*newargs)):
+                    yield combo
+        # we product out all the defaults at the end
+        for combo in product(*default_list):
+            yield combo
+
 @lru_cache(1000)
-def cached_product(*args):
-    return tuple(product(*args))
-    
+def cached_augmented_product(args, default_list):
+    return tuple(augmented_product(args, default_list))
+
 _marker = object()
 _notfound = object()
 _subscribers = object()
@@ -198,24 +235,22 @@ class Registry(object):
             for subscriber in subscribers:
                 subscriber(*objects)
 
-    def _lookup(self, provides, name, default, *requires):
-        # each requires argument *must* be a tuple composed of
-        # hashable objects; to match generic registrations, each tuple
-        # should contain a None.
+    def _lookup(self, provides, name, default, requires, default_requires):
+        # the requires and default_requires arguments *must* be
+        # hashable sequences of tuples composed of hashable objects
         reg = self.data
 
-        combinations = cached_product(*requires)
-        cachekey = (provides, combinations, name)
+        combinations = cached_augmented_product(requires, default_requires)
+        cachekey = (provides, combinations, name, default_requires)
         cached = self._lkpcache.get(cachekey, _marker)
 
         if cached is _marker:
+            regkey = (provides, name)
             for combo in combinations:
                 try:
-                    result = reg[combo]
-                    key = (provides, name)
-                    val = result[key]
-                    self._lkpcache.put(cachekey, val)
-                    return val
+                    result = reg[combo][regkey]
+                    self._lkpcache.put(cachekey, result)
+                    return result
                 except KeyError:
                     pass
 
@@ -231,11 +266,12 @@ class Registry(object):
         req = []
         for val in requires:
             if not hasattr(val, '__iter__'):
-                req.append((val, None))
+                req.append((val,))
             else:
-                req.append(tuple(val) + (None,))
+                req.append(tuple(val))
         name = kw.get('name', '')
-        result = self._lookup(provides, name, _marker, *req)
+        defaults = ((None,),) * len(req)
+        result = self._lookup(provides, name, _marker, tuple(req), defaults)
         if result is _marker:
             try:
                 return kw['default']
@@ -244,9 +280,10 @@ class Registry(object):
         return result
 
     def resolve(self, provides, *objects, **kw):
-        requires = [ providedby(obj) for obj in objects ]
+        requires = tuple( directlyprovidedby(obj) for obj in objects )
+        extras = tuple( alsoprovidedby(obj) for obj in objects )
         name = kw.get('name', '')
-        value = self._lookup(provides, name, _marker, *requires)
+        value = self._lookup(provides, name, _marker, requires, extras)
         if value is _marker:
             try:
                 return kw['default']
@@ -255,9 +292,10 @@ class Registry(object):
         return value
 
     def adapt(self, provides, *objects, **kw):
-        requires = [ providedby(obj) for obj in objects ]
+        requires = tuple( directlyprovidedby(obj) for obj in objects )
+        extras = tuple( alsoprovidedby(obj) for obj in objects )
         name = kw.get('name', '')
-        adapter = self._lookup(provides, name, _marker, *requires)
+        adapter = self._lookup(provides, name, _marker, requires, extras)
         if adapter is _marker:
             try:
                 return kw['default']
@@ -271,15 +309,17 @@ def directlyprovidedby(obj):
     except AttributeError:
         return ()
 
+def alsoprovidedby(obj):
+    try:
+        return (obj.__class__, None)
+    except AttributeError:
+        # probably an oldstyle class
+        return (type(obj), None)
+
 def providedby(obj):
     """ Return a sequence of component types provided by obj ordered
     most specific to least specific.  """
-    direct = getattr(obj, '__component_types__', ())
-    try:
-        return direct + (obj.__class__, None)
-    except AttributeError:
-        # probably an oldstyle class
-        return direct + (type(obj), None)
+    return directlyprovidedby(obj) + alsoprovidedby(obj)
 
 def provides(*types):
     """ Decorate an object with one or more types.
