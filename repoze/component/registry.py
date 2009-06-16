@@ -69,7 +69,6 @@ class Registry(object):
         return result
 
     def __setitem__(self, key, val):
-        self._lookupcache.clear()
         self.register(key, val)
 
     def __delitem__(self, key):
@@ -126,7 +125,6 @@ class Registry(object):
         return d
 
     def update(self, dict=None, **kw):
-        self._lookupcache.clear()
         if dict is not None:
             for k, v in dict.items():
                 self.register(k, v)
@@ -144,7 +142,6 @@ class Registry(object):
         return iter(self._dictmembers)
 
     def pop(self, key, *args):
-        self._lookupcache.clear()
         if len(args) > 1:
             raise TypeError, "pop expected at most 2 arguments, got "\
                               + repr(1 + len(args))
@@ -158,7 +155,6 @@ class Registry(object):
         return value
 
     def popitem(self):
-        self._lookupcache.clear()
         try:
             k, v = self.iteritems().next()
         except StopIteration:
