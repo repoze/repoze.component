@@ -25,6 +25,7 @@ def cached_product(*args):
     
 _marker = object()
 _notfound = object()
+_subscribers = object()
 
 class Registry(object):
     """ A component registry.  The component registry supports the
@@ -40,6 +41,7 @@ class Registry(object):
             self.update(dict)
         if len(kwargs):
             self.update(kwargs)
+        self.has_listeners = False
 
     @property
     def _dictmembers(self):
@@ -170,6 +172,28 @@ class Registry(object):
         name = kw.get('name', '')
         info = self.data.setdefault(tuple(requires), {})
         info[(provides, name)] =  component
+
+    def subscribe(self, fn, *requires, **kw):
+        subscribers = self.lookup(_subscribers, *requires, **kw)
+        if subscribers is None:
+            subscribers = []
+        subscribers.append(fn)
+        self.register(_subscribers, subscribers, *requires, **kw)
+        self.has_listeners = True
+
+    def unsubscribe(self, fn, *requires, **kw):
+        subscribers = self.lookup(_subscribers, *requires, **kw)
+        if subscribers is None:
+            subscribers = []
+        if fn in subscribers:
+            subscribers.remove(fn)
+
+    def notify(self, *objects, **kw):
+        default = []
+        subscribers = self.resolve(_subscribers, *objects, **kw)
+        if subscribers is not None:
+            for subscriber in subscribers:
+                subscriber(*objects)
 
     def lookup(self, provides, *requires, **kw):
         req = []

@@ -27,6 +27,7 @@ Table of Contents
 
    basic
    adapter
+   event
    directives
    glossary
 

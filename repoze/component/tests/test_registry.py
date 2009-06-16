@@ -179,6 +179,49 @@ class TestRegistry(unittest.TestCase):
         self.assertEqual(val, ('a', 1))
         self.failIf('a' in registry)
 
+    def test_subscribe(self):
+        from repoze.component.registry import _subscribers
+        def subscriber(what):
+            pass
+        registry = self._makeOne()
+        registry.subscribe(subscriber, 'a', 'b', 'c', name='foo')
+        result = registry.lookup(_subscribers, 'a', 'b', 'c', name='foo')
+        self.assertEqual(result, [subscriber])
+
+    def test_unsubscribe(self):
+        from repoze.component.registry import _subscribers
+        def subscriber(what):
+            pass
+        registry = self._makeOne()
+        registry.register(_subscribers, [subscriber], 'a', 'b', 'c', name='foo')
+        result = registry.lookup(_subscribers, 'a', 'b', 'c', name='foo')
+        self.assertEqual(result, [subscriber])
+        registry.unsubscribe(subscriber, 'a', 'b', 'c', name='foo')
+        result = registry.lookup(_subscribers, 'a', 'b', 'c', name='foo')
+        self.assertEqual(result, [])
+
+    def test_unsubscribe_not_subscribed(self):
+        def subscriber(what):
+            pass
+        registry = self._makeOne()
+        registry.unsubscribe(subscriber, 'a', 'b', 'c', name='foo')
+        # doesnt blow up
+        
+    def test_notify_noname(self):
+        from repoze.component.registry import _subscribers
+        def subscriber(what):
+            what.called = True
+        def subscriber2(what):
+            what.called_again = True
+        class What:
+            __component_types__ = ('abc',)
+        what = What()
+        registry = self._makeOne()
+        registry.register(_subscribers, [subscriber, subscriber2], 'abc')
+        registry.notify(what)
+        self.assertEqual(what.called, True)
+        self.assertEqual(what.called_again, True)
+
 class TestRegistryFunctional(unittest.TestCase):
     def _getTargetClass(self):
         from repoze.component import Registry
