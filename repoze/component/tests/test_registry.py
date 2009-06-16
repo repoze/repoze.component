@@ -471,26 +471,26 @@ class TestProvidedBy(unittest.TestCase):
         class Foo(object):
             provides('a', 'b')
         result = self._callFUT(Foo)
-        self.assertEqual(list(result), ['a', 'b', Foo, None])
+        self.assertEqual(list(result), ['a', 'b', type(Foo), None])
 
     def test_newstyle_class_without_provides(self):
         class Foo(object):
             pass
         result = self._callFUT(Foo)
-        self.assertEqual(list(result), [Foo, None])
+        self.assertEqual(list(result), [type(Foo), None])
 
     def test_oldstyle_class_with_provides(self):
         from repoze.component import provides
         class Foo:
             provides('a', 'b')
         result = self._callFUT(Foo)
-        self.assertEqual(list(result), ['a', 'b', Foo, None])
+        self.assertEqual(list(result), ['a', 'b', type(Foo), None])
 
     def test_oldstyle_class_without_provides(self):
         class Foo:
             pass
         result = self._callFUT(Foo)
-        self.assertEqual(list(result), [Foo, None])
+        self.assertEqual(list(result), [type(Foo), None])
 
     def test_oldstyle_instance_withprovides(self):
         from repoze.component import provides
@@ -535,9 +535,8 @@ class TestProvidedBy(unittest.TestCase):
         self.assertEqual(list(result), [bool, None])
 
     def test_None(self):
-        import types
         result = self._callFUT(None)
-        self.assertEqual(list(result), [types.NoneType, None])
+        self.assertEqual(list(result), [type(None), None])
 
 class TestDirectlyProvidedBy(unittest.TestCase):
     def _callFUT(self, obj):

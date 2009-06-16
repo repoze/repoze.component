@@ -229,12 +229,10 @@ def providedby(obj):
     most specific to least specific.  """
     direct = getattr(obj, '__component_types__', ())
     try:
-        obj.__bases__
-        # obj is a class
-        return direct + (obj, None)
-    except AttributeError:
-        # obj is not a class
         return direct + (obj.__class__, None)
+    except AttributeError:
+        # probably an oldstyle class
+        return direct + (type(obj), None)
 
 def provides(*types):
     """ Decorate an object with one or more types.
