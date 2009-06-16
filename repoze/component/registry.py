@@ -280,8 +280,8 @@ class Registry(object):
         return result
 
     def resolve(self, provides, *objects, **kw):
-        requires = tuple( directlyprovidedby(obj) for obj in objects )
-        extras = tuple( alsoprovidedby(obj) for obj in objects )
+        requires = tuple([directlyprovidedby(obj) for obj in objects])
+        extras = tuple([alsoprovidedby(obj) for obj in objects])
         name = kw.get('name', '')
         value = self._lookup(provides, name, _marker, requires, extras)
         if value is _marker:
@@ -292,8 +292,8 @@ class Registry(object):
         return value
 
     def adapt(self, provides, *objects, **kw):
-        requires = tuple( directlyprovidedby(obj) for obj in objects )
-        extras = tuple( alsoprovidedby(obj) for obj in objects )
+        requires = tuple([directlyprovidedby(obj) for obj in objects])
+        extras = tuple([alsoprovidedby(obj) for obj in objects])
         name = kw.get('name', '')
         adapter = self._lookup(provides, name, _marker, requires, extras)
         if adapter is _marker:
