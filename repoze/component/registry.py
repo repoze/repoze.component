@@ -41,7 +41,7 @@ class Registry(object):
             self.update(dict)
         if len(kwargs):
             self.update(kwargs)
-        self.has_listeners = False
+        self.listener_registered = False # at least one listener registered
 
     @property
     def _dictmembers(self):
@@ -175,7 +175,7 @@ class Registry(object):
             subscribers = []
         subscribers.append(fn)
         self.register(_subscribers, subscribers, *requires, **kw)
-        self.has_listeners = True
+        self.listener_registered = True
 
     def unsubscribe(self, fn, *requires, **kw):
         subscribers = self.lookup(_subscribers, *requires, **kw)
