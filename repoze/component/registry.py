@@ -196,22 +196,6 @@ class Registry(object):
             for subscriber in subscribers:
                 subscriber(*objects)
 
-    def lookup(self, provides, *requires, **kw):
-        req = []
-        for val in requires:
-            if not hasattr(val, '__iter__'):
-                req.append((val, None))
-            else:
-                req.append(tuple(val) + (None,))
-        name = kw.get('name', '')
-        result = self._lookup(provides, name, _marker, *req)
-        if result is _marker:
-            try:
-                return kw['default']
-            except KeyError:
-                raise LookupError('Cannot look up')
-        return result
-
     def _lookup(self, provides, name, default, *requires):
         # each requires argument *must* be a tuple composed of
         # hashable objects; to match generic registrations, each tuple
@@ -240,6 +224,22 @@ class Registry(object):
             return default
 
         return cached
+
+    def lookup(self, provides, *requires, **kw):
+        req = []
+        for val in requires:
+            if not hasattr(val, '__iter__'):
+                req.append((val, None))
+            else:
+                req.append(tuple(val) + (None,))
+        name = kw.get('name', '')
+        result = self._lookup(provides, name, _marker, *req)
+        if result is _marker:
+            try:
+                return kw['default']
+            except KeyError:
+                raise LookupError('Cannot look up')
+        return result
 
     def resolve(self, provides, *objects, **kw):
         requires = [ providedby(obj) for obj in objects ]
