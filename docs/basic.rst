@@ -180,8 +180,10 @@ this case, we look for something providing ``a``:
 - registered with the requires value ``None``
 
 If a match is found at any time during search, the search is abandoned
-and the component is returned.  If a component cannot be found, the
-default value (usually ``None`` unless overridden) is returned.
+and the component is returned.  If a component cannot be found, a
+``LookupError`` is raised unless a ``default`` argument was supplied
+to the ``lookup``, ``resolve`` or ``adapt`` method (in which case the
+default value is returned).
 
 When multiple "requires" arguments are supplied, things become
 considerably more complicated.  In general, the algorithm can be
