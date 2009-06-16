@@ -165,6 +165,8 @@ class Registry(object):
     def register(self, provides, component, *requires, **kw):
         """ Register a component """
         self._lookupcache.clear()
+        if provides is _subscribers:
+            self.listener_registered = True
         name = kw.get('name', '')
         info = self.data.setdefault(tuple(requires), {})
         info[(provides, name)] =  component
@@ -175,7 +177,6 @@ class Registry(object):
             subscribers = []
         subscribers.append(fn)
         self.register(_subscribers, subscribers, *requires, **kw)
-        self.listener_registered = True
 
     def unsubscribe(self, fn, *requires, **kw):
         subscribers = self.lookup(_subscribers, *requires, **kw)
