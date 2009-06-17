@@ -240,11 +240,11 @@ class Registry(object):
         # hashable sequences of tuples composed of hashable objects
         reg = self.data
 
-        combinations = cached_augmented_product(requires, default_requires)
-        cachekey = (provides, combinations, name, default_requires)
+        cachekey = (provides, requires, name, default_requires)
         cached = self._lkpcache.get(cachekey, _marker)
 
         if cached is _marker:
+            combinations = cached_augmented_product(requires, default_requires)
             regkey = (provides, name)
             for combo in combinations:
                 try:

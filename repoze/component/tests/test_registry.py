@@ -581,6 +581,16 @@ class TestRegistryFunctional(unittest.TestCase):
         result = registry.resolve('foo', instance1, instance2)
         self.assertEqual(result, 'somevalue')
 
+    def test_lookup_2nd_time_returns_same(self):
+        registry = self._makeOne()
+        registry.register('foo', 'somevalue', 'a', 'b')
+        result = registry.lookup('foo', 'a', 'b')
+        self.assertEqual(result, 'somevalue')
+
+        # this should come out of the lookup cache
+        result = registry.lookup('foo', 'a', 'b')
+        self.assertEqual(result, 'somevalue')
+
 class TestProvidedBy(unittest.TestCase):
     def _callFUT(self, obj):
         from repoze.component import providedby
