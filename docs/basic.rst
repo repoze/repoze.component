@@ -68,14 +68,17 @@ needs to *also* match the registration in combination with the
 A component registered along with a "requires" value is looked up
 using the ``lookup`` method of the registry.  To successfully get the
 component back, the "requires" values passed to the ``lookup`` method
-must match those it has been registered with.
+must match those it has been registered with.  If a component cannot be
+found, a ``LookupError`` is raised unless a ``default`` argument was
+supplied to the ``lookup``, ``resolve`` or ``adapt`` method (in which
+case the default value is returned).
 
 .. code-block:: python
 
    >>> registry.register('a', 'somecomponent', 'requires1')
-   >>> registry.lookup('a')
+   >>> registry.lookup('a', default=None)
    None
-   >>> registry.lookup('a', 'notrequires')
+   >>> registry.lookup('a', 'notrequires', default=None)
    None
    >>> registry.lookup('a', 'requires1')
    'somecomponent'
@@ -95,7 +98,7 @@ the component up via ``lookup``.
 .. code-block:: python
 
    >>> registry.register('a', 'somecomponent', 'requires1', 'requires2')
-   >>> registry.lookup('a', 'requires1')
+   >>> registry.lookup('a', 'requires1', default=None)
    None
    >>> registry.lookup('a', 'requires1', 'requires2')
    'somecomponent'
@@ -107,7 +110,7 @@ left-to-right in order to find a match (see :ref:`lookup_ordering`).
 .. code-block:: python
 
    >>> registry.register('a', 'somecomponent', 'requires1', 'requires2')
-   >>> registry.lookup('a', ['requires1'])
+   >>> registry.lookup('a', ['requires1'], default=None)
    None
    >>> registry.lookup('a', ['requires1', 'somethingelse'], ['indeed', 'requires2'])
    'somecomponent'
@@ -117,7 +120,7 @@ Any requires element can be a sequence or a non-sequence:
 .. code-block:: python
 
    >>> registry.register('a', 'somecomponent', 'requires1', 'requires2')
-   >>> registry.lookup('a', ['requires1'])
+   >>> registry.lookup('a', ['requires1'], default=None)
    None
    >>> registry.lookup('a', ['requires1', 'somethingelse'], 'requires2')
    'somecomponent'
