@@ -49,8 +49,7 @@ setup(name='repoze.component',
       test_suite="repoze.component",
       entry_points = """\
       [repoze.configuration.directive]
-      utility = repoze.component.directives:utility
-      adapter = repoze.component.directives:adapter
+      component = repoze.component.directives:component
       """
       )
 

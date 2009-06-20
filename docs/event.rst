@@ -8,7 +8,7 @@ Registering a subscriber
 ------------------------
 
 Use the ``subscribe`` method of the registry to register an event
-listener.  An event listener is an adapter for some number of object
+listener.  An event listener is an "adapter" for some number of object
 types.
 
 .. code-block:: python

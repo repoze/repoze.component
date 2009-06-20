@@ -1,9 +1,9 @@
 import unittest
 
-class TestAdapterDirective(unittest.TestCase):
+class TestComponentDirective(unittest.TestCase):
     def _callFUT(self, context, structure):
-        from repoze.component.directives import adapter
-        return adapter(context, structure)
+        from repoze.component.directives import component
+        return component(context, structure)
 
     def test_bad_structure(self):
         context = DummyContext()
@@ -34,55 +34,16 @@ class TestAdapterDirective(unittest.TestCase):
         context = DummyContext()
         structure = {'provides':'provides',
                      'requires':['requires'],
-                     'factory':'factory',
+                     'component':'component',
                      'name':'name'}
-        info = self._callFUT(context, structure)
+        info = self._callFUT(context, structure)[0]
         self.assertEqual(info['discriminator'],
-                         ('adapter', ('requires',), 'provides', 'name') )
+                         ('component', ('requires',), 'provides', 'name') )
         callback = info['callback']
         self.assertEqual(callback['func'], context.registry.register)
-        self.assertEqual(callback['arg'], ('provides', 'factory', 'requires'))
+        self.assertEqual(callback['arg'], ('provides', 'component', 'requires'))
         self.assertEqual(callback['kw'], {'name':'name'})
                          
-class TestUtilityDirective(unittest.TestCase):
-    def _callFUT(self, context, structure):
-        from repoze.component.directives import utility
-        return utility(context, structure)
-
-    def test_bad_structure(self):
-        context = DummyContext()
-        structure = 'abc'
-        self.assertRaises(ValueError, self._callFUT, context, structure)
-
-    def test_bad_diffnames(self):
-        context = DummyContext(['a'])
-        structure = {}
-        self.assertRaises(ValueError, self._callFUT, context, structure)
-
-    def test_no_provides(self):
-        context = DummyContext()
-        structure = {}
-        self.assertRaises(ValueError, self._callFUT, context, structure)
-
-    def test_no_component(self):
-        context = DummyContext()
-        structure = {'provides':'abc'}
-        self.assertRaises(ValueError, self._callFUT, context, structure)
-
-    def test_ok(self):
-        context = DummyContext()
-        structure = {'provides':'provides',
-                     'component':'component',
-                     'factory':'factory',
-                     'name':'name'}
-        info = self._callFUT(context, structure)
-        discriminator = info['discriminator']
-        callback = info['callback']
-        self.assertEqual(discriminator, ('utility', 'provides', 'name'))
-        self.assertEqual(callback['func'], context.registry.register)
-        self.assertEqual(callback['arg'], ('provides', 'component'))
-        self.assertEqual(callback['kw'], {'name':'name'})
-
 class DummyRegistry:
     def register(self):
         pass
