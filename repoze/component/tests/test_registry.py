@@ -179,6 +179,63 @@ class TestRegistry(unittest.TestCase):
         self.assertEqual(val, ('a', 1))
         self.failIf('a' in registry)
 
+    def test_register(self):
+        from repoze.component.registry import ALL
+        registry = self._makeOne()
+        registry._lkpcache = DummyLRUCache()
+        registry.register('provides', 'component', 'a', 'b', 'c', name='foo')
+        registered = registry.data[('a', 'b', 'c')]
+        self.assertEqual(registered[('provides', 'foo')], 'component')
+        self.assertEqual(registered[('provides', ALL)], ['component'])
+        registry.register('provides', 'component2', 'a', 'b', 'c', name='bar')
+        self.assertEqual(registered[('provides', 'bar')], 'component2')
+        self.assertEqual(registered[('provides', ALL)],
+                         ['component', 'component2'])
+        self.assertEqual(registry._lkpcache.cleared, True)
+
+    def test_register_all_name_fails(self):
+        from repoze.component.registry import ALL
+        registry = self._makeOne()
+        try:
+            registry.register('provides',
+                              'component', 'a', 'b', 'c', name=ALL)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError
+
+    def test_unregister(self):
+        from repoze.component.registry import ALL
+        registry = self._makeOne()
+        registry._lkpcache = DummyLRUCache()
+        registry.data[('a', 'b', 'c')] = {
+            ('provides', 'foo'):'component',
+            ('provides', 'bar'):'component2',
+            ('provides', ALL):['component', 'component2'],
+            }
+        registry.unregister('provides', 'component', 'a', 'b', 'c', name='foo')
+        self.assertEqual(registry._lkpcache.cleared, True)
+        registered = registry.data[('a', 'b', 'c')]
+        self.assertEqual(registered,
+                         {('provides', 'bar'): 'component2',
+                          ('provides', ALL): ['component2'],
+                          }
+                         )
+        registry.unregister('provides', 'component2', 'a', 'b', 'c', name='bar')
+        self.failIf(('a', 'b', 'c') in registry.data)
+
+    def test_unregister_all(self):
+        from repoze.component.registry import ALL
+        registry = self._makeOne()
+        registry._lkpcache = DummyLRUCache()
+        registry.data[('a', 'b', 'c')] = {
+            ('provides', 'foo'):'component',
+            ('provides', ALL):['component', 'component2'],
+            }
+        registry.unregister('provides', 'component', 'a', 'b', 'c', name=ALL)
+        self.failIf(('a', 'b', 'c') in registry.data)
+        self.assertEqual(registry._lkpcache.cleared, True)
+
     def test_subscribe(self):
         from repoze.component.registry import _subscribers
         def subscriber(what):
@@ -187,6 +244,16 @@ class TestRegistry(unittest.TestCase):
         registry.subscribe(subscriber, 'a', 'b', 'c', name='foo')
         result = registry.lookup(_subscribers, 'a', 'b', 'c', name='foo')
         self.assertEqual(result, [subscriber])
+
+    def test_subscribe_all(self):
+        from repoze.component.registry import ALL
+        registry = self._makeOne()
+        try:
+            registry.subscribe('subscriber', 'a', 'b', 'c', name=ALL)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError
 
     def test_unsubscribe(self):
         from repoze.component.registry import _subscribers
@@ -199,6 +266,16 @@ class TestRegistry(unittest.TestCase):
         registry.unsubscribe(subscriber, 'a', 'b', 'c', name='foo')
         result = registry.lookup(_subscribers, 'a', 'b', 'c', name='foo')
         self.assertEqual(result, [])
+
+    def test_unsubscribe_all(self):
+        from repoze.component.registry import ALL
+        registry = self._makeOne()
+        try:
+            registry.unsubscribe('subscriber', 'a', 'b', 'c', name=ALL)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError
 
     def test_unsubscribe_not_subscribed(self):
         def subscriber(what):
@@ -245,6 +322,23 @@ class TestRegistry(unittest.TestCase):
         registry = self._makeOne()
         registry.notify(what)
         # doesn't blow up
+
+    def test_notify_all(self):
+        from repoze.component.registry import ALL
+        from repoze.component.registry import _subscribers
+        def subscriber(what):
+            what.called += 1
+        class What:
+            def __init__(self):
+                self.called = 0
+            __component_types__ = ('abc',)
+        what = What()
+        registry = self._makeOne()
+        registry.register(_subscribers, [subscriber, subscriber], 'abc',
+                          name='yup')
+        registry.register(_subscribers, [subscriber, subscriber], 'abc')
+        registry.notify(what, name=ALL)
+        self.assertEqual(what.called, 4)
 
     def test_lookup_default(self):
         registry = self._makeOne()
@@ -387,6 +481,18 @@ class TestRegistryFunctional(unittest.TestCase):
 
         registry.register('default', 'a', None, None)
         eq(look('default', None, None), 'a')
+
+    def test_register_and_lookup_all(self):
+        from repoze.component.registry import ALL
+        registry = self._makeRegistry()
+        look = registry.lookup
+        eq = self.assertEqual
+        result = registry.lookup('bladerunner', None, 'deckard', name=ALL)
+        self.assertEqual(result, ['deckardvalue'])
+        registry.register('bladerunner', 'deckardvalue2' , None, 'deckard',
+                          name='another')
+        result = registry.lookup('bladerunner', None, 'deckard', name=ALL)
+        self.assertEqual(result, ['deckardvalue', 'deckardvalue2'])
 
     def test_register_and_resolve_classes(self):
         registry = self._makeRegistry()
@@ -542,6 +648,22 @@ class TestRegistryFunctional(unittest.TestCase):
         eq(resolve('bladerunner', barris, deckard), 'deckardvalue')
         eq(resolve('bladerunner', None, None, default=None), None)
 
+    def test_register_and_resolve_all(self):
+        from repoze.component.registry import ALL
+        from repoze.component import provides
+
+        deckard = OSDeckard(None)
+        provides(deckard, 'deckard')
+
+        registry = self._makeRegistry()
+        eq = self.assertEqual
+        result = registry.resolve('bladerunner', None, deckard, name=ALL)
+        self.assertEqual(result, ['deckardvalue'])
+        registry.register('bladerunner', 'deckardvalue2' , None, 'deckard',
+                          name='another')
+        result = registry.resolve('bladerunner', None, deckard, name=ALL)
+        self.assertEqual(result, ['deckardvalue', 'deckardvalue2'])
+
     def test_adapt(self):
         registry = self._makeRegistry()
         adapt = registry.adapt
@@ -554,6 +676,22 @@ class TestRegistryFunctional(unittest.TestCase):
 
         adapter = registry.adapt('something', Barris)
         self.assertEqual(adapter.context, Barris)
+
+    def test_adapt_all(self):
+        registry = self._makeRegistry()
+        from repoze.component.registry import ALL
+
+        class Adapter:
+            def __init__(self, context):
+                self.context = context
+
+        registry.register('something', Adapter, 'barris')
+        registry.register('something', Adapter, 'barris', name='another')
+
+        adapters = registry.adapt('something', Barris, name=ALL)
+        self.assertEqual(len(adapters), 2)
+        for adapter in adapters:
+            self.assertEqual(adapter.context, Barris)
 
     def test_register_Nones(self):
         from repoze.component import provides
@@ -917,3 +1055,8 @@ class OSInheritsBarris(OSBarris):
     def __init__(self, context):
         self.context = context
     
+class DummyLRUCache(dict):
+    def clear(self):
+        self.cleared = True
+        dict.clear(self)
+        

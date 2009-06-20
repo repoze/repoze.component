@@ -5,6 +5,7 @@ from repoze.lru import LRUCache
 
 from repoze.component.advice import addClassAdvisor
 
+ALL = object()
 
 try:
     from itertools import product # 2.6+
@@ -150,7 +151,10 @@ class Registry(object):
     has_key = __contains__
 
     def get(self, key, default=None):
-        return self.lookup(key, default=default)
+        try:
+            return self[key]
+        except KeyError:
+            return default
 
     @classmethod
     def fromkeys(cls, iterable, value=None):
@@ -168,7 +172,7 @@ class Registry(object):
 
     def setdefault(self, key, failobj=None):
         self._lkpcache.clear()
-        val = self.lookup(key, default=failobj)
+        val = self.get(key, default=failobj)
         if val is failobj:
             self[key] = failobj
         return self[key]
@@ -199,15 +203,34 @@ class Registry(object):
 
     def register(self, provides, component, *requires, **kw):
         """ Register a component """
+        name = kw.get('name', '')
+        if name is ALL:
+            raise ValueError('ALL cannot be used in a registration as a name')
         self._lkpcache.clear()
         if provides is _subscribers:
             self.listener_registered = True
-        name = kw.get('name', '')
-        info = self.data.setdefault(tuple(requires), {})
+        info = self.data.setdefault(requires, {})
         info[(provides, name)] =  component
+        all = info.setdefault((provides, ALL), [])
+        all.append(component)
+
+    def unregister(self, provides, component, *requires, **kw):
+        self._lkpcache.clear()
+        name = kw.get('name', '')
+        if name is ALL:
+            del self.data[requires]
+            return
+        info = self.data.get(requires, {})
+        del info[(provides, name)]
+        all = info.get((provides, ALL), [])
+        all.remove(component)
+        if not all:
+            del self.data[requires]
 
     def subscribe(self, fn, *requires, **kw):
         name = kw.get('name', '')
+        if name is ALL:
+            raise ValueError('ALL may not be used as a name to subscribe')
         newkw = {'name':name, 'default':_marker}
         subscribers = self.lookup(_subscribers, *requires, **newkw)
         if subscribers is _marker:
@@ -217,6 +240,8 @@ class Registry(object):
 
     def unsubscribe(self, fn, *requires, **kw):
         name = kw.get('name', '')
+        if name is ALL:
+            raise ValueError('ALL may not be used as a name to unsubscribe')
         newkw = {'name':name, 'default':_marker}
         subscribers = self.lookup(_subscribers, *requires, **newkw)
         if subscribers is _marker:
@@ -227,11 +252,16 @@ class Registry(object):
     def notify(self, *objects, **kw):
         if not self.listener_registered:
             return # optimization
-        default = []
         subscribers = self.resolve(_subscribers, *objects, **kw)
+        name = kw.get('name', '')
         if subscribers is not None:
-            for subscriber in subscribers:
-                subscriber(*objects)
+            if name is ALL:
+                for subscriberlist in subscribers:
+                    for subscriber in subscriberlist:
+                        subscriber(*objects)
+            else:
+                for subscriber in subscribers:
+                    subscriber(*objects)
 
     def _lookup(self, provides, name, default, requires, default_requires):
         # the requires and default_requires arguments *must* be
@@ -299,6 +329,8 @@ class Registry(object):
                 return kw['default']
             except KeyError:
                 raise LookupError('Could not adapt')
+        if name is ALL:
+            return [ a(*objects) for a in adapter ]
         return adapter(*objects)
 
 def directlyprovidedby(obj):

@@ -87,6 +87,8 @@ The dictionary getter APIs present on a registry will *not* return
 components registered with any requires values.  The dictionary API
 cannot be used to find registrations made with "requires" arguments.
 
+.. code-block:: python
+
    >>> registry.register('a', 'somecomponent', 'requires')
    >>> registry.get('a')
    None
@@ -130,6 +132,8 @@ to create a registration that can later be resolved in ``lookup`` via
 *any* requires element.  ``None`` as a requires element is essentially
 a wildcard.
 
+.. code-block:: python
+
    >>> registry.register('a', 'somecomponent', None, 'requires2')
    >>> registry.lookup('a', 'requires1', 'requires2')
    'somecomponent'
@@ -137,6 +141,13 @@ a wildcard.
    'somecomponent'
    >>> registry.lookup('a', None, 'requires2')
    'somecomponent'
+
+You can unregister an existing registration by using the
+``unregister`` method:
+
+.. code-block:: python
+
+   >>> registry.unregister('a', 'somecomponent', None, 'requires2', name='foo')
 
 .. _lookup_ordering:
 
@@ -245,3 +256,38 @@ requires values.
 As usual, the search is abandoned when any registration is found that
 matches the provides and requires values.
 
+Using ``ALL``
+-------------
+
+A special argument ``repoze.configuration.ALL`` may be passed as a
+``name=`` argument to the ``unregister``, ``notify``, ``lookup``,
+``resolve`` and ``adapt`` methods of a registry.  This is an advanced
+feature which very few people need to use, which essentially allows
+you to do a wildcard match on registrations made under *any* ``name``.
+
+- If you supply ``name=ALL`` to the ``unregister`` method, all named
+  and unnamed registrations which match the other arguments supplied
+  will be unregistered.
+
+- If you supply ``name=ALL`` to the ``notify`` method, all subscribers
+  without respect to their name will be notified (all named and
+  unnamed subscribers which match the other arguments supplied to the
+  method).
+
+- If you supply ``name=ALL`` to the ``lookup`` method, you will be
+  returned a list if any registration was made for the other arguments
+  in the list; each element in the list will be the item registered
+  under the requires args used, without respecting the ``name`` the
+  item was registered under.
+
+- If you supply ``name=ALL`` to the ``resolve`` method, you will be
+  returned a list if any registration was made for the other arguments
+  in the list; each element in the list will be the item registered
+  under the requires objects passed, without respecting the ``name``
+  each was registered under.
+
+- If you supply ``name=ALL`` to the ``adapt`` method, you will be
+  returned a list if any registration was made for the other arguments
+  in the list; each element in the list will be the result of calling
+  the item registered under the requires objects passed, without
+  respecting the ``name`` each was registered under.
