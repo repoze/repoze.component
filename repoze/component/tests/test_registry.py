@@ -681,6 +681,19 @@ class TestRegistryFunctional(unittest.TestCase):
         result = registry.lookup('foo', 'a', 'b')
         self.assertEqual(result, 'somevalue')
 
+class TestSubscribers(unittest.TestCase):
+    def _makeOne(self):
+        from repoze.component.registry import Subscribers
+        return Subscribers()
+
+    def test_repr(self):
+        inst = self._makeOne()
+        self.assertEqual(repr(inst), '<subscriber>')
+
+    def test_str(self):
+        inst = self._makeOne()
+        self.assertEqual(str(inst), '<subscriber>')
+
 class TestProvidedBy(unittest.TestCase):
     def _callFUT(self, obj):
         from repoze.component import providedby
