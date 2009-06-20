@@ -6,6 +6,9 @@ Glossary
 
 .. glossary::
 
+  interface
+     A term used by zope.component to indicate a marker describing an
+     object.  repoze.configuration does not use interface objects.
   zope.component
      The system from which the ideas in repoze.component are derived.
   repoze.configuration
