@@ -68,10 +68,10 @@ needs to *also* match the registration in combination with the
 A component registered along with a "requires" value is looked up
 using the ``lookup`` method of the registry.  To successfully get the
 component back, the "requires" values passed to the ``lookup`` method
-must match those it has been registered with.  If a component cannot be
-found, a ``LookupError`` is raised unless a ``default`` argument was
-supplied to the ``lookup``, ``resolve`` or ``adapt`` method (in which
-case the default value is returned).
+must match those it has been registered with.  If a component cannot
+be found, a ``LookupError`` is raised unless a ``default`` argument
+was supplied to the ``lookup`` or ``resolve`` method (in which case
+the default value is returned).
 
 .. code-block:: python
 
@@ -196,8 +196,8 @@ this case, we look for something providing ``a``:
 If a match is found at any time during search, the search is abandoned
 and the component is returned.  If a component cannot be found, a
 ``LookupError`` is raised unless a ``default`` argument was supplied
-to the ``lookup``, ``resolve`` or ``adapt`` method (in which case the
-default value is returned).
+to the ``lookup`` or ``resolve`` method (in which case the default
+value is returned).
 
 When multiple "requires" arguments are supplied, things become
 considerably more complicated.  In general, the algorithm can be
@@ -260,10 +260,10 @@ Using ``ALL``
 -------------
 
 A special argument ``repoze.configuration.ALL`` may be passed as a
-``name=`` argument to the ``unregister``, ``notify``, ``lookup``,
-``resolve`` and ``adapt`` methods of a registry.  This is an advanced
-feature which very few people need to use, which essentially allows
-you to do a wildcard match on registrations made under *any* ``name``.
+``name=`` argument to the ``unregister``, ``notify``, ``lookup``, and
+``resolve`` methods of a registry.  This is an advanced feature which
+very few people need to use, which essentially allows you to do a
+wildcard match on registrations made under *any* ``name``.
 
 - If you supply ``name=ALL`` to the ``unregister`` method, all named
   and unnamed registrations which match the other arguments supplied
@@ -286,8 +286,3 @@ you to do a wildcard match on registrations made under *any* ``name``.
   under the requires objects passed, without respecting the ``name``
   each was registered under.
 
-- If you supply ``name=ALL`` to the ``adapt`` method, you will be
-  returned a list if any registration was made for the other arguments
-  in the list; each element in the list will be the result of calling
-  the item registered under the requires objects passed, without
-  respecting the ``name`` each was registered under.
