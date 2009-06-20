@@ -6,6 +6,9 @@ from repoze.lru import LRUCache
 from repoze.component.advice import addClassAdvisor
 
 ALL = object()
+_marker = object()
+_notfound = object()
+_subscribers = object()
 
 try:
     from itertools import product # 2.6+
@@ -60,10 +63,6 @@ def augmented_product(args, default_list):
 @lru_cache(1000)
 def cached_augmented_product(args, default_list):
     return tuple(augmented_product(args, default_list))
-
-_marker = object()
-_notfound = object()
-_subscribers = object()
 
 class Registry(object):
     """ A component registry.  The component registry supports the
