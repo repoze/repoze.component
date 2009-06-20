@@ -8,7 +8,14 @@ from repoze.component.advice import addClassAdvisor
 ALL = object()
 _marker = object()
 _notfound = object()
-_subscribers = object()
+_missing = object()
+
+class Subscribers:
+    def __repr__(self):
+        return '<subscriber>'
+    __str__ = __repr__
+
+_subscribers = Subscribers()
 
 try:
     from itertools import product # 2.6+
@@ -285,6 +292,10 @@ class Registry(object):
             cached = _notfound
             
         if cached is _notfound:
+            if default is _missing:
+                raise LookupError(
+                    "Couldn't find a component providing %s for requires "
+                    "args %r with name `%s`" % (provides, list(requires), name))
             return default
 
         return cached
@@ -297,26 +308,16 @@ class Registry(object):
             else:
                 req.append(tuple(val))
         name = kw.get('name', '')
-        defaults = ((None,),) * len(req)
-        result = self._lookup(provides, name, _marker, tuple(req), defaults)
-        if result is _marker:
-            try:
-                return kw['default']
-            except KeyError:
-                raise LookupError('Cannot look up')
-        return result
+        extras = ((None,),) * len(req)
+        default = kw.get('default', _missing)
+        return self._lookup(provides, name, default, tuple(req), extras)
 
     def resolve(self, provides, *objects, **kw):
         requires = tuple([directlyprovidedby(obj) for obj in objects])
         extras = tuple([alsoprovidedby(obj) for obj in objects])
         name = kw.get('name', '')
-        value = self._lookup(provides, name, _marker, requires, extras)
-        if value is _marker:
-            try:
-                return kw['default']
-            except KeyError:
-                raise LookupError('Could not resolve')
-        return value
+        default = kw.get('default', _missing)
+        return self._lookup(provides, name, default, requires, extras)
 
 def directlyprovidedby(obj):
     try:
