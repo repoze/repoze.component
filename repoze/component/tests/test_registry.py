@@ -373,25 +373,6 @@ class TestRegistry(unittest.TestCase):
         result = registry.resolve('test', abc, name='yup')
         self.assertEqual(result, 'registered')
 
-    def test_adapt_default(self):
-        registry = self._makeOne()
-        result = registry.adapt('a', default=registry)
-        self.assertEqual(result, registry)
-
-    def test_adapt_nodefault(self):
-        registry = self._makeOne()
-        self.assertRaises(LookupError, registry.adapt, 'a')
-        
-    def test_adapt_named(self):
-        registry = self._makeOne()
-        def callback(abc):
-            return 'registered'
-        registry.register('test', callback, 'abc', name='yup')
-        class ABC:
-            __component_types__ = ('abc',)
-        abc = ABC()
-        result = registry.adapt('test', abc, name='yup')
-        self.assertEqual(result, 'registered')
 
 class TestRegistryFunctional(unittest.TestCase):
     def _getTargetClass(self):
@@ -663,35 +644,6 @@ class TestRegistryFunctional(unittest.TestCase):
                           name='another')
         result = registry.resolve('bladerunner', None, deckard, name=ALL)
         self.assertEqual(result, ['deckardvalue', 'deckardvalue2'])
-
-    def test_adapt(self):
-        registry = self._makeRegistry()
-        adapt = registry.adapt
-
-        class Adapter:
-            def __init__(self, context):
-                self.context = context
-
-        registry.register('something', Adapter, 'barris')
-
-        adapter = registry.adapt('something', Barris)
-        self.assertEqual(adapter.context, Barris)
-
-    def test_adapt_all(self):
-        registry = self._makeRegistry()
-        from repoze.component.registry import ALL
-
-        class Adapter:
-            def __init__(self, context):
-                self.context = context
-
-        registry.register('something', Adapter, 'barris')
-        registry.register('something', Adapter, 'barris', name='another')
-
-        adapters = registry.adapt('something', Barris, name=ALL)
-        self.assertEqual(len(adapters), 2)
-        for adapter in adapters:
-            self.assertEqual(adapter.context, Barris)
 
     def test_register_Nones(self):
         from repoze.component import provides

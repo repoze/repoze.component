@@ -70,7 +70,7 @@ class Registry(object):
     dictionary.  It also support more advanced registrations and
     lookups that include a ``requires`` argument and a ``name`` via
     its ``register`` and ``lookup`` methods.  It may be treated as an
-    adapter registry by using its ``resolve`` and ``adapt`` methods."""
+    component registry by using its ``resolve`` method."""
     def __init__(self, dict=None, **kwargs):
         self.data = {}
         self._lkpcache = LRUCache(1000)
@@ -317,20 +317,6 @@ class Registry(object):
             except KeyError:
                 raise LookupError('Could not resolve')
         return value
-
-    def adapt(self, provides, *objects, **kw):
-        requires = tuple([directlyprovidedby(obj) for obj in objects])
-        extras = tuple([alsoprovidedby(obj) for obj in objects])
-        name = kw.get('name', '')
-        adapter = self._lookup(provides, name, _marker, requires, extras)
-        if adapter is _marker:
-            try:
-                return kw['default']
-            except KeyError:
-                raise LookupError('Could not adapt')
-        if name is ALL:
-            return [ a(*objects) for a in adapter ]
-        return adapter(*objects)
 
 def directlyprovidedby(obj):
     try:

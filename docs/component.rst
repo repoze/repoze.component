@@ -1,39 +1,26 @@
-Using :mod:`repoze.component` as an Adapter System
-==================================================
+Using :mod:`repoze.component` as an Component System
+====================================================
 
 We've seen the basic registration and lookup facilities of a
 :mod:`repoze.component` registry.  You can provide additional
-functionality to your applications if you use it as an "adapter
-registry".  Using a component registry as an adapter registry makes it
-possible to use the :mod:`repoze.component` component registry for the
-same purposes as something like :term:`zope.component`.
+functionality to your applications if you use it as an "component
+registry".  Using a registry as a component registry makes it possible
+to use the :mod:`repoze.component` component registry for the same
+purposes as something like :term:`zope.component`.
 
 The extra methods exposed by a :mod:`repoze.component` registry that
-allow you to treat it as an adapter regstry are ``resolve`` and
-``adapt``.  The ``resolve`` method simply accepts a provides value and
-sequence of *objects that supply component types* and returns a
-matching component.  The ``adapt`` method does exactly what resolve
-does, but it additionally uses the component as a factory, passing
-each ``requires`` value to it as a positional argument and returns the
-result.
-
-.. note:: If you hold your head just right and squint at it hard
-   enough, you might consider :mod:`repoze.component` software that makes
-   it possible to do a form of `aspect-oriented programming
-   <http://en.wikipedia.org/wiki/Aspect-oriented_programming>`_ in
-   Python.  However, you need to know nothing about aspect-oriented
-   programming to use it (the author doesn't really know anything
-   about "proper" aspect-oriented programming either, but he's told
-   that it's not dissimlar to the mechanisms exposed by
-   :mod:`repoze.component`).
+allow you to treat it as a component regstry is ``resolve``.  The
+``resolve`` method simply accepts a provides value and a sequence of
+*objects that supply component types* and returns a matching
+component.
 
 "Requires" Objects Supply Component Types
 -----------------------------------------
 
-Object used as "requires" arguments to the ``resolve`` and ``adapts``
-methods of a component registry usually supply a component type.  This
-is done by adding using the ``provides`` function against objects
-passed to these methods.
+Object used as "requires" arguments to the ``resolve`` and methods of
+a component registry usually supply a component type.  This is done by
+adding using the ``provides`` function against objects passed to these
+methods.
 
 The ``provides`` function may be used within a class definition, it
 may be used as a class decorator, or it may be applied against an
@@ -141,9 +128,9 @@ component registry:
 
 Thus our "requires" argument for this particular object is ``['i',
 'c', 'b', 'a', 'hello', C, None]``.  Every object supplied as a
-"requires" argument to either the ``resolve`` or ``adapt`` method of a
-component registry has its requires values computed this way.  We then
-find a component based on the set of requires arguments passed in ala
+"requires" argument to the ``resolve`` method of a component registry
+has its requires values computed this way.  We then find a component
+based on the set of requires arguments passed in ala
 :ref:`lookup_ordering`.
 
 Comparing :mod:`repoze.component` to :term:`zope.component`
@@ -160,6 +147,14 @@ kinds of Python objects.  In :mod:`repoze.component`, interfaces are not
 used.  Instead, components (such as "adapters" and "utilities") are
 registered using marker "component types", which are usually just
 strings although they can be any hashable type.
+
+One major difference between :mod:`repoze.component` and
+:mod:`zope.component` is that :mod:`repoze.component` has no real
+support for the concept of an "adapter".  The things that you register
+into a component registry are simply components.  You can register a
+callable against some set of arguments, but :mod:`repoze.component`
+will not *call* it for you.  You have to retrieve it and call it
+yourself.
 
 .. note::
 
@@ -186,7 +181,8 @@ following:
 
 .. code-block:: python
 
-  implementation = registry.adapt('something', context, name='foo')
+  adapter = registry.resolve('something', context, name='foo')
+  implementation = adapter(context)
 
 The :mod:`repoze.component` equivalent of ``implementation =
 getMultiAdapter((context1, context2), ISomething, name='foo')`` is the
@@ -194,7 +190,8 @@ following:
 
 .. code-block:: python
 
-  implementation = registry.adapt('something', context1, context2, name='foo')
+  adapter = registry.resolve('something', context1, context2, name='foo')
+  implementation = adapter(context1, context2)
 
 Likewise, the :mod:`repoze.component` equivalent of ``implementation =
 getMultiAdapter((context1, context2, context3), ISomething,
@@ -202,6 +199,7 @@ name='foo')`` is the following:
 
 .. code-block:: python
 
-  implementation = registry.adapt('something', context1, context2, context3,
-                                  name='foo')
+  adapter = registry.resolve('something', context1, context2, context3, 
+                             name='foo')
+  implementation = adapter(context1, context2, context3)
 

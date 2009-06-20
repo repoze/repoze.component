@@ -29,7 +29,7 @@ Table of Contents
    :maxdepth: 2
 
    basic
-   adapter
+   component
    event
    directives
    glossary
