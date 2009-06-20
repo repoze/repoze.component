@@ -5,20 +5,21 @@ We've seen the basic registration and lookup facilities of a
 :mod:`repoze.component` registry.  You can provide additional
 functionality to your applications if you use it as an "component
 registry".  Using a registry as a component registry makes it possible
-to use the :mod:`repoze.component` component registry for the same
-purposes as something like :term:`zope.component`.
+to use the :mod:`repoze.component` registry for the same purposes as
+something like :term:`zope.component`.
 
-The extra methods exposed by a :mod:`repoze.component` registry that
+The extra method exposed by a :mod:`repoze.component` registry that
 allow you to treat it as a component regstry is ``resolve``.  The
 ``resolve`` method simply accepts a provides value and a sequence of
-*objects that supply component types* and returns a matching
+*objects that supply component types*.  When called with a list of
+objects that supply component types, ``resolve`` returns a matching
 component.
 
 "Requires" Objects Supply Component Types
 -----------------------------------------
 
-Object used as "requires" arguments to the ``resolve`` and methods of
-a component registry usually supply a component type.  This is done by
+Objects used as "requires" arguments to the ``resolve`` method of a
+component registry usually supply a component type.  This is done by
 adding using the ``provides`` function against objects passed to these
 methods.
 
@@ -74,8 +75,8 @@ implicit component type that can be used in registrations.
 "Under the hood", the ``provides`` function sets the
 ``__component_types__`` attribute on a class or object.
 
-How :mod:`repoze.component` Computes an Effecive Component Type for a Requires Object
--------------------------------------------------------------------------------------
+How :mod:`repoze.component` Computes an Effective Component Type for a Requires Object
+--------------------------------------------------------------------------------------
 
 When a component type is computed for an object, the object is
 searched in the following order.  All values are collected and used to
