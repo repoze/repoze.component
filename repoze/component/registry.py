@@ -100,10 +100,8 @@ class Registry(object):
         return len(self._dictmembers)
 
     def __getitem__(self, key):
-        result = self.lookup(key, default=_marker)
-        if result is _marker:
-            raise KeyError(key)
-        return result
+        notrequires = self.data.get((), {})
+        return notrequires[(key, '')]
 
     def __setitem__(self, key, val):
         self.register(key, val)
