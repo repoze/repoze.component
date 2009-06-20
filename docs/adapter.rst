@@ -165,7 +165,7 @@ strings although they can be any hashable type.
 
   In the examples below, where a :term:`zope.component` API might
   expect an interface object (e.g. the interface ``ISomething``), the
-  :mod:`repoze.component` API expects a compoment type (e.g. the string
+  :mod:`repoze.component` API expects a component type (e.g. the string
   ``something``).  Also, in the examples below, whereas
   :term:`zope.component` users typically rely on APIs that consult a
   "global registry", :mod:`repoze.component` provides no such facility.
