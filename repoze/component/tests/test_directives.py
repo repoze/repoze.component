@@ -43,6 +43,19 @@ class TestComponentDirective(unittest.TestCase):
         self.assertEqual(callback['func'], context.registry.register)
         self.assertEqual(callback['arg'], ('provides', 'component', 'requires'))
         self.assertEqual(callback['kw'], {'name':'name'})
+
+    def test_ok_norequires(self):
+        context = DummyContext()
+        structure = {'provides':'provides',
+                     'component':'component',
+                     'name':'name'}
+        info = self._callFUT(context, structure)[0]
+        self.assertEqual(info['discriminator'],
+                         ('component', (), 'provides', 'name') )
+        callback = info['callback']
+        self.assertEqual(callback['func'], context.registry.register)
+        self.assertEqual(callback['arg'], ('provides', 'component'))
+        self.assertEqual(callback['kw'], {'name':'name'})
                          
 class DummyRegistry:
     def register(self):
