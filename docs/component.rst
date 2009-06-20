@@ -1,5 +1,5 @@
-Using :mod:`repoze.component` as an Component System
-====================================================
+Using :mod:`repoze.component` as a Component System
+===================================================
 
 We've seen the basic registration and lookup facilities of a
 :mod:`repoze.component` registry.  You can provide additional
