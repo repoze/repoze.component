@@ -1,10 +1,12 @@
+from repoze.component.registry import _subscribers
+
 def component(context, structure):
 
     if not isinstance(structure, dict):
         raise ValueError('Bad structure for component directive')
 
     diff = context.diffnames(structure, ['provides', 'requires', 'name',
-                                         'component'])
+                                         'object'])
     if diff:
         raise ValueError('Unknown key(s) in "adapter" directive: %r' % diff)
 
@@ -18,9 +20,9 @@ def component(context, structure):
 
     requires = tuple(requires)
 
-    component = context.getvalue(structure, 'component')
+    component = context.getvalue(structure, 'object')
     if component is None:
-        raise ValueError('Missing "component" attribute')
+        raise ValueError('Missing "object" attribute')
 
     component = context.resolve(component)
 
@@ -31,3 +33,17 @@ def component(context, structure):
                                   provides, component, *requires, **kw)
     discriminator = ('component', requires, provides, name)
     return [ {'discriminator':discriminator, 'callback':callback} ]
+
+def subscriber(context, structure):
+    if not isinstance(structure, dict):
+        raise ValueError('Bad structure for component directive')
+
+    diff = context.diffnames(structure, ['requires', 'name', 'object'])
+    if diff:
+        raise ValueError('Unknown key(s) in "subscriber" directive: %r' % diff)
+
+    structure['provides'] = _subscribers
+    return component(context, structure)
+
+    
+    

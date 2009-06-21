@@ -34,27 +34,56 @@ class TestComponentDirective(unittest.TestCase):
         context = DummyContext()
         structure = {'provides':'provides',
                      'requires':['requires'],
-                     'component':'component',
+                     'object':'object',
                      'name':'name'}
         info = self._callFUT(context, structure)[0]
         self.assertEqual(info['discriminator'],
                          ('component', ('requires',), 'provides', 'name') )
         callback = info['callback']
         self.assertEqual(callback['func'], context.registry.register)
-        self.assertEqual(callback['arg'], ('provides', 'component', 'requires'))
+        self.assertEqual(callback['arg'], ('provides', 'object', 'requires'))
         self.assertEqual(callback['kw'], {'name':'name'})
 
     def test_ok_norequires(self):
         context = DummyContext()
         structure = {'provides':'provides',
-                     'component':'component',
+                     'object':'object',
                      'name':'name'}
         info = self._callFUT(context, structure)[0]
         self.assertEqual(info['discriminator'],
                          ('component', (), 'provides', 'name') )
         callback = info['callback']
         self.assertEqual(callback['func'], context.registry.register)
-        self.assertEqual(callback['arg'], ('provides', 'component'))
+        self.assertEqual(callback['arg'], ('provides', 'object'))
+        self.assertEqual(callback['kw'], {'name':'name'})
+
+class TestSubscriberDirective(unittest.TestCase):
+    def _callFUT(self, context, structure):
+        from repoze.component.directives import subscriber
+        return subscriber(context, structure)
+
+    def test_bad_structure(self):
+        context = DummyContext()
+        structure = 'abc'
+        self.assertRaises(ValueError, self._callFUT, context, structure)
+
+    def test_bad_diffnames(self):
+        context = DummyContext(['a'])
+        structure = {}
+        self.assertRaises(ValueError, self._callFUT, context, structure)
+
+    def test_ok(self):
+        from repoze.component.registry import _subscribers
+        context = DummyContext()
+        structure = {'requires':['requires'],
+                     'object':'object',
+                     'name':'name'}
+        info = self._callFUT(context, structure)[0]
+        self.assertEqual(info['discriminator'],
+                         ('component', ('requires',), _subscribers, 'name') )
+        callback = info['callback']
+        self.assertEqual(callback['func'], context.registry.register)
+        self.assertEqual(callback['arg'], (_subscribers, 'object', 'requires'))
         self.assertEqual(callback['kw'], {'name':'name'})
                          
 class DummyRegistry:
