@@ -50,6 +50,7 @@ setup(name='repoze.component',
       entry_points = """\
       [repoze.configuration.directive]
       component = repoze.component.directives:component
+      subscriber = repoze.component.directives:subscriber
       """
       )
 
