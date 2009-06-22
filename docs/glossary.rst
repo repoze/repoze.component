@@ -18,6 +18,8 @@ Glossary
     YAML configuration file when :mod:`repoze.component` is used with
     the ``repoze.configuration`` package.  See
     :ref:`loading_from_a_config_file` for more information.
+  YAML
+    `YAML Aint Markup Language <http://www.yaml.org/>`_.
 
 
 
