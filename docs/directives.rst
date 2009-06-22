@@ -1,5 +1,5 @@
 Using ``repoze.component`` with ``repoze.configuration``
-=======================================================
+========================================================
 
 :mod:`repoze.component` makes use of :term:`repoze.configuration` to
 allow configurations to be expressed via :term:`YAML`.  It makes two
