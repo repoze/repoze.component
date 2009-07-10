@@ -827,6 +827,47 @@ class TestProvidesInsideClass(unittest.TestCase):
                 pass
             else:
                 raise AssertionError('wrong')
+
+class TestOnlyProvidesAsFunction(unittest.TestCase):
+    def _callFUT(self, obj, *types):
+        from repoze.component import onlyprovides
+        onlyprovides(obj, *types)
+
+    def test_multiple_calls(self):
+        class Foo(object):
+            __component_types__ = ('a',)
+        foo = Foo()
+        self._callFUT(foo, 'abc', 'def')
+        self._callFUT(foo, 'ghi')
+        self.assertEqual(foo.__component_types__, ('ghi',))
+
+    def test_no_types(self):
+        from repoze.component import onlyprovides
+        self.assertRaises(TypeError, provides)
+
+class TestProvidesInsideClass(unittest.TestCase):
+    def test_class_inheritance(self):
+        from repoze.component import provides
+        from repoze.component import onlyprovides
+        class Foo(object):
+            provides('abc', 'def')
+        class Foo2(Foo):
+            onlyprovides('ghi')
+        self.assertEqual(Foo2.__inherited_component_types__,
+                         ('ghi',))
+        self.assertEqual(Foo.__inherited_component_types__,
+                         ('abc', 'def'))
+
+    def test_morethanonce(self):
+        from repoze.component import onlyprovides
+        class Foo(object):
+            onlyprovides('abc', 'def')
+            try:
+                onlyprovides('ghi')
+            except TypeError:
+                pass
+            else:
+                raise AssertionError('wrong')
         
 class TestAugmentedProduct(unittest.TestCase):
     def _callFUT(self, arg, default_list):

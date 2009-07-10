@@ -346,7 +346,9 @@ def providedby(obj):
     return directlyprovidedby(obj)+alsoprovidedby(obj)+defaultprovidedby(obj)
 
 def provides(*types):
-    """ Decorate an object with one or more types.
+    """ Decorate an object with one or more types.  If any existing
+    types are set on the object, preserve them, inserting the types
+    we're adding into the front of the list.
 
     May be used as a function to decorate an instance:
 
@@ -363,7 +365,31 @@ def provides(*types):
     class Foo(object):
         provides('type1', 'type2')
     """
-    frame = sys._getframe(1)
+    return _provides(types)
+
+def onlyprovides(*types):
+    """ Decorate an object with one or more types.  If any existing
+    types are set on the object, overwrite them.
+
+    May be used as a function to decorate an instance:
+
+    provides(ob, 'type1', 'type2')
+
+    .. or as a class decorator (Python 2.6+):
+
+    @provides('type1', type2')
+    class Foo:
+        pass
+
+    .. or inside a class definition:
+
+    class Foo(object):
+        provides('type1', 'type2')
+    """
+    return _provides(types, only=True)
+
+def _provides(types, only=False):
+    frame = sys._getframe(2)
     locals = frame.f_locals
     if (locals is frame.f_globals) or ('__module__' not in locals):
         # not called from within a class definition
@@ -372,31 +398,46 @@ def provides(*types):
             raise TypeError('provides must be called with an object')
         ob, types = types[0], types[1:]
         if inspect.isclass(ob):
-            _class_add_types(ob, *types)
+            if only:
+                _class_set_types(ob, types)
+            else:
+                _class_add_types(ob, types)
         else:
-            _instance_add_types(ob, *types)
+            if only:
+                _instance_set_types(ob, types)
+            else:
+                _instance_add_types(ob, types)
         return ob
     else:
         # called from within a class definition
         if '__implements_advice_data__' in locals:
             raise TypeError(
                 "provides can be used only once within a class definition.")
-        locals['__implements_advice_data__'] = types
-        addClassAdvisor(_classprovides_advice, depth=2)
+        locals['__implements_advice_data__'] = (types, only)
+        addClassAdvisor(_classprovides_advice, depth=3)
 
-def _instance_add_types(obj, *types):
+def _instance_add_types(obj, types):
     alreadyprovides = directlyprovidedby(obj)
     alreadyprovides = tuple([ x for x in alreadyprovides if x not in types ])
     obj.__component_types__ = types + alreadyprovides
 
-def _class_add_types(cls, *types):
+def _instance_set_types(obj, types):
+    obj.__component_types__ = types
+
+def _class_add_types(cls, types):
     alreadyprovides = alsoprovidedby(cls)
     alreadyprovides = tuple([ x for x in alreadyprovides if x not in types ])
     cls.__inherited_component_types__ = types + alreadyprovides
 
+def _class_set_types(obj, types):
+    obj.__inherited_component_types__ = types
+
 def _classprovides_advice(cls):
-    types = cls.__dict__['__implements_advice_data__']
+    types, only = cls.__dict__['__implements_advice_data__']
     del cls.__implements_advice_data__
-    _class_add_types(cls, *types)
+    if only:
+        _class_set_types(cls, types)
+    else:
+        _class_add_types(cls, types)
     return cls
 

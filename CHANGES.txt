@@ -27,6 +27,10 @@ Next release
   component types (both direct and inherited, as well as default
   types).
 
+- Add ``onlyprovides`` API, which overwrites any existing
+  ``__component_types__`` (or ``__inherited_component_types__``)
+  attribute on the object.  It otherwise acts just like ``provides``.
+
 0.1 (2009-06-22)
 ----------------
 

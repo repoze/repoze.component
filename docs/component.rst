@@ -76,6 +76,20 @@ implicit component type that can be used in registrations.
 ``__component_types__`` attribute on an instance or the
 ``__inherited_component_types__`` attribute on a class.
 
+There is also an ``onlyprovides`` API which performs the same action
+except inherited types are overwritten with the values passed to the
+API.  For example::
+
+.. code-block:: python
+
+    from repoze.component import onlyprovides
+
+    class MyObject(object):
+        pass
+
+    obj = MyObject()
+    onlyprovides(obj, 'mytype', 'anothertype')
+
 How :mod:`repoze.component` Computes an Effective Component Type for a Requires Object
 --------------------------------------------------------------------------------------
 
