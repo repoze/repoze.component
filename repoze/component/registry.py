@@ -402,7 +402,8 @@ def _provides(types, only=False):
         if not types:
             raise TypeError('provides must be called with an object')
         ob, types = types[0], types[1:]
-        if inspect.isclass(ob):
+        # cant test the below reliably without python 2.6
+        if inspect.isclass(ob): # pragma: no cover
             if only:
                 _class_set_types(ob, types)
             else:
