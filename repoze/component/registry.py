@@ -343,7 +343,12 @@ def defaultprovidedby(obj):
 def providedby(obj):
     """ Return a sequence of component types provided by obj ordered
     most specific to least specific.  """
-    return directlyprovidedby(obj)+alsoprovidedby(obj)+defaultprovidedby(obj)
+    default = defaultprovidedby(obj)
+    direct = directlyprovidedby(obj)
+    if direct.__class__ is Only:
+        return direct + default
+    also = alsoprovidedby(obj)
+    return direct+also+default
 
 def provides(*types):
     """ Decorate an object with one or more types.  If any existing
@@ -422,7 +427,7 @@ def _instance_add_types(obj, types):
     obj.__component_types__ = types + alreadyprovides
 
 def _instance_set_types(obj, types):
-    obj.__component_types__ = types
+    obj.__component_types__ = Only(types)
 
 def _class_add_types(cls, types):
     alreadyprovides = alsoprovidedby(cls)
@@ -441,3 +446,5 @@ def _classprovides_advice(cls):
         _class_add_types(cls, types)
     return cls
 
+class Only(tuple):
+    pass

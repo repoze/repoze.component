@@ -755,6 +755,16 @@ class TestProvidedBy(unittest.TestCase):
         result = self._callFUT(foo)
         self.assertEqual(list(result), [Foo, None])
 
+    def test_obj_is_onlyprovides(self):
+        from repoze.component import provides
+        from repoze.component import onlyprovides
+        class Foo(object):
+            provides('a', 'b')
+        foo = Foo()
+        onlyprovides(foo, 'z')
+        result = self._callFUT(foo)
+        self.assertEqual(list(result), ['z', type(foo), None])
+
     def test_string(self):
         result = self._callFUT('foo')
         self.assertEqual(list(result), [str, None])
