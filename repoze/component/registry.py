@@ -1,3 +1,4 @@
+import inspect
 import sys
 
 from repoze.lru import lru_cache
@@ -313,8 +314,9 @@ class Registry(object):
         return self._lookup(provides, name, default, tuple(req), extras)
 
     def resolve(self, provides, *objects, **kw):
-        requires = tuple([directlyprovidedby(obj) for obj in objects])
-        extras = tuple([alsoprovidedby(obj) for obj in objects])
+        requires = tuple(
+            [directlyprovidedby(obj)+alsoprovidedby(obj) for obj in objects ])
+        extras = tuple([defaultprovidedby(obj) for obj in objects])
         name = kw.get('name', '')
         default = kw.get('default', _missing)
         return self._lookup(provides, name, default, requires, extras)
@@ -327,6 +329,12 @@ def directlyprovidedby(obj):
 
 def alsoprovidedby(obj):
     try:
+        return obj.__inherited_component_types__
+    except AttributeError:
+        return ()
+
+def defaultprovidedby(obj):
+    try:
         return (obj.__class__, None)
     except AttributeError:
         # probably an oldstyle class
@@ -335,7 +343,7 @@ def alsoprovidedby(obj):
 def providedby(obj):
     """ Return a sequence of component types provided by obj ordered
     most specific to least specific.  """
-    return directlyprovidedby(obj) + alsoprovidedby(obj)
+    return directlyprovidedby(obj)+alsoprovidedby(obj)+defaultprovidedby(obj)
 
 def provides(*types):
     """ Decorate an object with one or more types.
@@ -363,7 +371,10 @@ def provides(*types):
         if not types:
             raise TypeError('provides must be called with an object')
         ob, types = types[0], types[1:]
-        _add_types(ob, *types)
+        if inspect.isclass(ob):
+            _class_add_types(ob, *types)
+        else:
+            _instance_add_types(ob, *types)
         return ob
     else:
         # called from within a class definition
@@ -373,14 +384,19 @@ def provides(*types):
         locals['__implements_advice_data__'] = types
         addClassAdvisor(_classprovides_advice, depth=2)
 
-def _add_types(obj, *types):
+def _instance_add_types(obj, *types):
     alreadyprovides = directlyprovidedby(obj)
     alreadyprovides = tuple([ x for x in alreadyprovides if x not in types ])
     obj.__component_types__ = types + alreadyprovides
 
+def _class_add_types(cls, *types):
+    alreadyprovides = alsoprovidedby(cls)
+    alreadyprovides = tuple([ x for x in alreadyprovides if x not in types ])
+    cls.__inherited_component_types__ = types + alreadyprovides
+
 def _classprovides_advice(cls):
     types = cls.__dict__['__implements_advice_data__']
     del cls.__implements_advice_data__
-    _add_types(cls, *types)
+    _class_add_types(cls, *types)
     return cls
 

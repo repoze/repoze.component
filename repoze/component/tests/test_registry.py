@@ -368,7 +368,7 @@ class TestRegistry(unittest.TestCase):
         registry = self._makeOne()
         registry.register('test', 'registered', 'abc', name='yup')
         class ABC:
-            __component_types__ = ('abc',)
+            __inherited_component_types__ = ('abc',)
         abc = ABC()
         result = registry.resolve('test', abc, name='yup')
         self.assertEqual(result, 'registered')
@@ -814,7 +814,8 @@ class TestProvidesInsideClass(unittest.TestCase):
             provides('abc', 'def')
         class Foo2(Foo):
             provides('ghi')
-        self.assertEqual(Foo2.__component_types__, ('ghi', 'abc', 'def'))
+        self.assertEqual(Foo2.__inherited_component_types__,
+                         ('ghi', 'abc', 'def'))
 
     def test_morethanonce(self):
         from repoze.component import provides

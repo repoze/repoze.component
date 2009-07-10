@@ -1,6 +1,32 @@
 repoze.component Changelog
 ==========================
 
+Next release
+------------
+
+- Break apart component type storage into ``__component_types__`` and
+  ``__inherited_component_types__`` attributes.
+
+  The ``__component_types__`` attribute has become a sequence of
+  component types stored directly on an instance as a result of
+  ``provides(ob, 'sometype')``.
+
+  The ``__inherited_component_types__`` attribute is stored on a class
+  as the result of ``provides(cls, 'sometype')`` ( or via a 
+  class-level call to ``provides('a', 'b')`` ).
+
+  We then recompose these two separate attributes into a unified set
+  of component types when the ``resolve`` method of the registry is
+  called to create an effective list of component types.
+
+- ``repoze.component.directlyprovidedby`` now returns only the types
+  directly provided by an instance (its ``__component_types__``);
+  previously it would also return the inherited component types
+  (because there was no such thing as an inherited component type).
+  However, ``repoze.component.providedby`` continues to return all
+  component types (both direct and inherited, as well as default
+  types).
+
 0.1 (2009-06-22)
 ----------------
 

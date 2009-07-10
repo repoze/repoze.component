@@ -73,7 +73,8 @@ attribute attribute for simple usage; the class of an object is an
 implicit component type that can be used in registrations.
 
 "Under the hood", the ``provides`` function sets the
-``__component_types__`` attribute on a class or object.
+``__component_types__`` attribute on an instance or the
+``__inherited_component_types__`` attribute on a class.
 
 How :mod:`repoze.component` Computes an Effective Component Type for a Requires Object
 --------------------------------------------------------------------------------------
@@ -82,16 +83,20 @@ When a component type is computed for an object, the object is
 searched in the following order.  All values are collected and used to
 construct the final "requires" argument used.
 
-- The object itself is checked for the ``__component_types__``
-  attribute.
+- The object is checked for a ``__component_types__`` attribute
+  (usually stored directly on the instance); if it does not provide
+  one we use the empty tuple.
 
-- If the object is a class, its base classes are checked in Python MRO
-  order for a ``__component_types__`` attribute.
+- The object is checked for an ``__inherited_component_types__``
+  attribute (found usually via an attribute of one of the object's
+  base classes).  If it does not provide one we use the empty tuple.
 
-- If the object is an instance, its class then its base classes are
-  checked in Python MRO order for a ``__component_types__`` attribute.
+- The values of ``__component_types__`` and
+  ``__inherited_component_types__`` are concatenated together (in that
+  order).
 
-- The object's class is added as an unconditional component type.
+- The object's class and the value ``None`` are appended to the
+  resulting tuple as unconditional component types.
 
 We'll use the following set of objects as examples:
 
@@ -110,25 +115,78 @@ We'll use the following set of objects as examples:
 
     instance = C()
     provides(instance, 'i')
+    provides(instance, 'i2')
 
-If "instance" is used as an argument to the ``resolve`` method of an
-component registry:
+When the preceding set of statements are made:
 
-- We first look at the instance to find a component type.  This
-  finds component type ``i``.
+- The class statement defining ``A`` is executed, and the ``provides``
+  function assigns the ``__inherited_component_types__`` attribute of
+  the ``A`` object to ``('a', 'hello')``.  Since the A object has no
+  base classes with the ``__inherited_component_types__`` attribute on
+  them, only the types directly fed to ``provides`` (``a`` and
+  ``hello``) are assigned to the ``__inherited_component_types__``
+  attribute of ``A``.
 
-- We look at its direct class ``C`` which finds component type ``c``.
+- The class statement defining ``B`` is executed, and the ``provides``
+  function assigns the ``__inherited_component_types__`` attribute of
+  the ``B`` object to ``('b', 'a', 'hello')``.  "``b``" is an argument
+  to the provides function itself, but the ``provides`` function also
+  appends ``a`` and ``hello`` to the ``__inherited_component_types__``
+  attribute because these are found within the
+  ``__inherited_component_types__`` attribute of the base class object
+  ``A``.
 
-- We look at the component type of the base classes of the ``C``
-  class.  The B class provides component type ``b``, the ``A`` class
-  provides component types (``a`` and ``hello``).
+- The class statement defining ``C`` is executed, and the ``provides``
+  function assigns the ``__inherited_component_type__`` attribute of
+  the ``C`` object to ``('c', 'b', 'a', 'hello')``.  "``c``" is an
+  argument to the provides function itself, but the ``provides``
+  function also appends ``b``, ``a`` and ``hello`` to the
+  ``__inherited_component_types__`` attribute because they are found
+  within the ``__inherited_component_types__`` attribute of the base
+  class object ``B``.
 
-- We use the object's class.
+- An instance of ``C`` is created via the ``instance = C()``
+  statement.
 
-- We use the value ``None``.
+- The ``provides`` function is called with the C instance named
+  ``instance`` as an argument as well as the ``i`` type.  This causes
+  the ``__component_type__`` attribute of the ``instance`` object to
+  be set to ``('i',)``.
 
-Thus our "requires" argument for this particular object is ``['i',
-'c', 'b', 'a', 'hello', C, None]``.  Every object supplied as a
+- The ``provides`` function is called with the C instance named
+  ``instance`` as an argument as well as the ``i2`` type.  This causes
+  the ``__component_type__`` attribute of the ``instance`` object to
+  be set to ``('i2', 'i')``.  "``i2``" is an argument to the provides
+  function itself, but the ``provides`` function also appends ``i``,
+  to the ``__component_types__`` attribute because it is found within
+  the ``__component_types__`` attribute of the instance as a result of
+  the previous ``provides`` statement.
+
+If "instance" is subsequently used as an argument to the ``resolve``
+method of an component registry:
+
+- We first look at the instance to find its direct component types.
+  This finds component types ``('i2', 'i')`` as the
+  ``__component_type__`` attribute via standard Python attribute
+  lookup.
+
+- We look at the instance to find its inherited component types.  This
+  finds inherited component types ``('c', 'b', 'a', 'hello')`` as the
+  ``__inherited_component_types__`` attribtute via standard Python
+  attribute lookup.
+
+- We find the object's class (``C``).
+
+- We concatenate ``__component_types__`` and
+  ``__inherited_component_types__`` into the sequence ``('i2', 'i',
+  'c', 'b', 'a', 'hello')`` (the direct component types are first,
+  then the derived ones).
+
+- To this list we append the class of the instance (``C``) and the
+  value ``None``.
+
+Thus our "requires" argument for this particular object is ``('i2',
+'i', 'c', 'b', 'a', 'hello', C, None)``.  Every object supplied as a
 "requires" argument to the ``resolve`` method of a component registry
 has its requires values computed this way.  We then find a component
 based on the set of requires arguments passed in ala
