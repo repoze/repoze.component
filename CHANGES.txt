@@ -1,8 +1,8 @@
 repoze.component Changelog
 ==========================
 
-Next release
-------------
+0.2 (2009-07-11)
+----------------
 
 - Break apart component type storage into ``__component_types__`` and
   ``__inherited_component_types__`` attributes.
