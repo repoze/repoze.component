@@ -52,8 +52,23 @@ class TestRegistry(unittest.TestCase):
     def test_clear(self):
         d = {'a':1}
         registry = self._makeOne(d)
+        registry.register('IFoo', 'foo', name='foo')
         registry.clear()
         self.assertEqual(len(registry), 0)
+        self.assertEqual(registry.lookup('IFoo', name='foo'), 'foo')
+
+    def test_clear_full(self):
+        d = {'a':1}
+        registry = self._makeOne(d)
+        registry.register('IFoo', 'foo', name='foo')
+        registry.clear(full=True)
+        self.assertEqual(len(registry), 0)
+        try:
+            registry.lookup('IFoo', name='foo')
+        except LookupError:
+            pass
+        else:
+            raise AssertionError
 
     def test_copy(self):
         d = {'a':1}

@@ -1,6 +1,14 @@
 repoze.component Changelog
 ==========================
 
+Next release
+------------
+
+- Provide a ``full`` argument to the ``clear`` method of
+  ``repoze.component.registry.Registry`` which clears the registry
+  entirely instead of just clearing unnamed registrations.  It
+  defaults to false.
+
 0.2 (2009-07-11)
 ----------------
 

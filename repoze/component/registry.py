@@ -122,13 +122,16 @@ class Registry(object):
         except KeyError:
             raise KeyError(key)
 
-    def clear(self):
+    def clear(self, full=False):
+        if full:
+            self.data = {}
+        else:
+            notrequires = self.data.get((), {})
+            for k, v in notrequires.items():
+                provides, name = k
+                if name == '':
+                    del notrequires[k]
         self._lkpcache.clear()
-        notrequires = self.data.get((), {})
-        for k, v in notrequires.items():
-            provides, name = k
-            if name == '':
-                del notrequires[k]
 
     def copy(self):
         import copy
