@@ -1,9 +1,9 @@
 import unittest
 
 class TestComponentDirective(unittest.TestCase):
-    def _callFUT(self, context, structure):
+    def _callFUT(self, context, structure, node=None):
         from repoze.component.directives import component
-        return component(context, structure)
+        return component(context, structure, node)
 
     def test_bad_structure(self):
         context = DummyContext()
@@ -58,9 +58,9 @@ class TestComponentDirective(unittest.TestCase):
         self.assertEqual(callback['kw'], {'name':'name'})
 
 class TestSubscriberDirective(unittest.TestCase):
-    def _callFUT(self, context, structure):
+    def _callFUT(self, context, structure, node=None):
         from repoze.component.directives import subscriber
-        return subscriber(context, structure)
+        return subscriber(context, structure, node)
 
     def test_bad_structure(self):
         context = DummyContext()
@@ -108,5 +108,9 @@ class DummyContext:
 
     def call_later(self, func, *arg, **kw):
         return {'func':func, 'arg':arg, 'kw':kw}
+
+    def error(self, node, msg):
+        raise ValueError(node, msg)
+    
 
     
