@@ -88,6 +88,22 @@ accomplished via:
 The ``requires`` argument is optional.  If it exists, it must be a
 list of "required" component types for this registration.
 
+Note that the directive YAML also takes a boolean-style key named
+``override``.  If this is specified, this registration will override
+any earlier registration for the same component even if it conflicts
+with that earlier registration.  For example::
+
+.. code-block:: text
+
+   --- !component
+   object: somepackage.hellomodule:hellofunc
+   name: helloname
+   provides: hello
+   requires: - abc
+             - def
+   override: true
+
+
 The Subscriber Directive
 ------------------------
 
@@ -114,3 +130,17 @@ identical to the ``component`` directive except:
 The above registration assumes that the ``asubscriber`` callable
 referred to above is a callable that accepts two arguments (the
 objects being adapted by the subscriber).
+
+Note that the directive YAML also takes a boolean-style key named
+``override``.  If this is specified, this registration will override
+any earlier registration for the same component even if it conflicts
+with that earlier registration.  For example::
+
+.. code-block:: text
+
+   --- !subscriber
+   object: somepackage.subscribers:asubscriber
+   name: helloname
+   requires: - abc
+             - def
+   override: true

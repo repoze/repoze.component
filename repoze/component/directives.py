@@ -1,50 +1,41 @@
 from repoze.component.registry import _subscribers
 
-def component(context, structure, node):
+def component(declaration):
+    expect_names = ['provides', 'requires', 'name', 'object']
+    declaration.expect(dict, names=expect_names)
 
-    if not isinstance(structure, dict):
-        context.error(node, 'Bad structure for component directive')
-
-    diff = context.diffnames(structure, ['provides', 'requires', 'name',
-                                         'object'])
-    if diff:
-        context.error(node, 'Unknown key(s) in "adapter" directive: %r' % diff)
-
-    provides = context.getvalue(structure, 'provides')
+    provides = declaration.string('provides')
     if provides is None:
-        context.error(node, 'Missing "provides" attribute')
+        declaration.error('Missing "provides" attribute')
 
-    requires = context.getvalue(structure, 'requires', type=list)
+    requires = declaration.getvalue('requires', typ=list)
     if requires is None:
         requires = ()
 
     requires = tuple(requires)
 
-    component = context.getvalue(structure, 'object')
+    component = declaration.string('object')
     if component is None:
-        context.error(node, 'Missing "object" attribute')
+        declaration.error('Missing "object" attribute')
 
-    component = context.resolve(component)
+    override = declaration.boolean('override', False)
 
-    name = structure.get('name', '')
+    component = declaration.resolve(component)
+
+    name = declaration.string('name', '')
     kw = dict(name=name)
 
-    callback = context.call_later(context.registry.register,
-                                  provides, component, *requires, **kw)
+    callback = declaration.call_later(declaration.registry.register,
+                                      provides, component, *requires, **kw)
     discriminator = ('component', requires, provides, name)
-    return [ {'discriminator':discriminator, 'callback':callback} ]
+    declaration.action(callback, discriminator, override=override)
 
-def subscriber(context, structure, node):
-    if not isinstance(structure, dict):
-        raise ValueError('Bad structure for component directive')
+def subscriber(declaration):
+    expect_names = ['requires', 'name', 'object']
+    diff = declaration.expect(dict, names=expect_names)
 
-    diff = context.diffnames(structure, ['requires', 'name', 'object'])
-    if diff:
-        context.error(node,
-                      'Unknown key(s) in "subscriber" directive: %r' % diff)
-
-    structure['provides'] = _subscribers
-    return component(context, structure, node)
+    declaration.structure['provides'] = _subscribers
+    component(declaration)
 
     
     
