@@ -1,10 +1,10 @@
 repoze.component Changelog
 ==========================
 
-Next release
-------------
+0.4 (2009-07-25)
+----------------
 
-- Make compatible with (as yet unreleased) repoze.component 0.4.
+- Make compatible with repoze.component 0.4.
 
 - Add ``override`` keys to ``component`` and ``subscriber``
   directives.

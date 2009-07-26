@@ -15,6 +15,7 @@ To load and execute a configuration file that contains
 ``repoze.component`` registrations, use the following pattern"
 
 .. code-block:: python
+   :linenos:
 
    from repoze.component import Registry
 
@@ -40,6 +41,7 @@ have a ``name``.  The ``object`` and ``provides`` keys are required.
 The ``name`` argument defaults to the empty string.
 
 .. code-block:: text
+   :linenos:
 
    --- !component
    object: somepackage.hellomodule:hellofunc
@@ -61,6 +63,7 @@ If the ``name`` is not specified or is empty, the eventual
 registration performed by this directive is equivalent to:
 
 .. code-block:: python
+   :linenos:
 
    >>> registry.register('hello', object, 'abc', 'def')
 
@@ -68,6 +71,7 @@ Subseqent lookups for this unnamed component in the registry can be
 accomplished via:
 
 .. code-block:: python
+   :linenos:
 
    >>> registry.lookup('hello', 'abc', 'def')
 
@@ -75,6 +79,7 @@ If the ``name`` *is* specified and nonempty, the eventual registration
 performed by this directive in the registry is equivalent to:
 
 .. code-block:: python
+   :linenos:
 
    >>> registry.register('hello', object, 'abc', 'def', name='thename')
 
@@ -82,6 +87,7 @@ Subseqent lookups for this named component in the registry can be
 accomplished via:
 
 .. code-block:: python
+   :linenos:
 
    >>> registry.lookup('hello', 'abc', 'def', name='thename')
 
@@ -91,9 +97,10 @@ list of "required" component types for this registration.
 Note that the directive YAML also takes a boolean-style key named
 ``override``.  If this is specified, this registration will override
 any earlier registration for the same component even if it conflicts
-with that earlier registration.  For example::
+with that earlier registration.  For example:
 
 .. code-block:: text
+   :linenos:
 
    --- !component
    object: somepackage.hellomodule:hellofunc
@@ -120,6 +127,7 @@ identical to the ``component`` directive except:
   values (it is an "adapter").
 
 .. code-block:: text
+   :linenos:
 
    --- !subscriber
    object: somepackage.subscribers:asubscriber
@@ -134,9 +142,10 @@ objects being adapted by the subscriber).
 Note that the directive YAML also takes a boolean-style key named
 ``override``.  If this is specified, this registration will override
 any earlier registration for the same component even if it conflicts
-with that earlier registration.  For example::
+with that earlier registration.  For example:
 
 .. code-block:: text
+   :linenos:
 
    --- !subscriber
    object: somepackage.subscribers:asubscriber
