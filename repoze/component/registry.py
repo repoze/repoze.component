@@ -20,7 +20,7 @@ _subscribers = Subscribers()
 
 try:
     from itertools import product # 2.6+
-except ImportError:
+except ImportError: # pragma: no cover
     def product(*args, **kwds):
         # product('ABCD', 'xy') --> Ax Ay Bx By Cx Cy Dx Dy
         # product(range(2), repeat=3) --> 000 001 010 011 100 101 110 111

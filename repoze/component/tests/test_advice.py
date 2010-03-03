@@ -81,17 +81,18 @@ class AdviceTests(unittest.TestCase):
 
         self.assertEquals(log, [(1, Foo), (2, [Foo]), (3, [[Foo]])])
 
-    def XXXtestOutside(self):
-        try:
-            ping([], 1)
-        except SyntaxError:
-            pass
-        else:
-            raise AssertionError(
-                "Should have detected advice outside class body"
-            )
+    def testOutside(self): # pragma: no cover
+        if sys.version_info < (2, 6):
+            try:
+                ping([], 1)
+            except SyntaxError:
+                pass
+            else:
+                raise AssertionError(
+                    "Should have detected advice outside class body"
+                )
 
-    def testDoubleType(self):
+    def testDoubleType(self): # pragma: no cover
         if sys.hexversion >= 0x02030000:
             return  # you can't duplicate bases in 2.3
         class aType(type,type):
@@ -125,7 +126,7 @@ class AdviceTests(unittest.TestCase):
                 ping([],1)
         except TypeError:
             pass
-        else:
+        else: # pragma: no cover
             raise AssertionError("Should have gotten incompatibility error")
 
         class M3(M1,M2): pass

@@ -67,7 +67,7 @@ class TestRegistry(unittest.TestCase):
             registry.lookup('IFoo', name='foo')
         except LookupError:
             pass
-        else:
+        else: # pragma: no cover
             raise AssertionError
 
     def test_copy(self):
@@ -122,7 +122,6 @@ class TestRegistry(unittest.TestCase):
         self.assertEqual(registry.get('a'), 1)
 
     def test_fromkeys(self):
-        d = {'a':1, 'b':2}
         klass = self._getTargetClass()
         registry = klass.fromkeys(['a', 'b'], 2)
         self.assertEqual(registry['a'], 2)
@@ -216,7 +215,7 @@ class TestRegistry(unittest.TestCase):
                               'component', 'a', 'b', 'c', name=ALL)
         except ValueError:
             pass
-        else:
+        else: # pragma: no cover
             raise AssertionError
 
     def test_unregister(self):
@@ -254,7 +253,7 @@ class TestRegistry(unittest.TestCase):
     def test_subscribe(self):
         from repoze.component.registry import _subscribers
         def subscriber(what):
-            pass
+            """ """
         registry = self._makeOne()
         registry.subscribe(subscriber, 'a', 'b', 'c', name='foo')
         result = registry.lookup(_subscribers, 'a', 'b', 'c', name='foo')
@@ -267,13 +266,13 @@ class TestRegistry(unittest.TestCase):
             registry.subscribe('subscriber', 'a', 'b', 'c', name=ALL)
         except ValueError:
             pass
-        else:
+        else: # pragma: no cover
             raise AssertionError
 
     def test_unsubscribe(self):
         from repoze.component.registry import _subscribers
         def subscriber(what):
-            pass
+            """ """
         registry = self._makeOne()
         registry.register(_subscribers, [subscriber], 'a', 'b', 'c', name='foo')
         result = registry.lookup(_subscribers, 'a', 'b', 'c', name='foo')
@@ -289,12 +288,12 @@ class TestRegistry(unittest.TestCase):
             registry.unsubscribe('subscriber', 'a', 'b', 'c', name=ALL)
         except ValueError:
             pass
-        else:
+        else: # pragma: no cover
             raise AssertionError
 
     def test_unsubscribe_not_subscribed(self):
         def subscriber(what):
-            pass
+            """ """
         registry = self._makeOne()
         registry.unsubscribe(subscriber, 'a', 'b', 'c', name='foo')
         # doesnt blow up
@@ -450,7 +449,7 @@ class TestRegistryFunctional(unittest.TestCase):
         val = registry.pop('a')
         self.assertEqual(val, 1)
         self.assertEqual(len(registry), 5)
-        item = registry.popitem()
+        registry.popitem()
         self.assertEqual(len(registry), 4)
         registry.clear()
         self.assertEqual(len(registry), 0)
@@ -481,8 +480,6 @@ class TestRegistryFunctional(unittest.TestCase):
     def test_register_and_lookup_all(self):
         from repoze.component.registry import ALL
         registry = self._makeRegistry()
-        look = registry.lookup
-        eq = self.assertEqual
         result = registry.lookup('bladerunner', None, 'deckard', name=ALL)
         self.assertEqual(result, ['deckardvalue'])
         registry.register('bladerunner', 'deckardvalue2' , None, 'deckard',
@@ -652,7 +649,6 @@ class TestRegistryFunctional(unittest.TestCase):
         provides(deckard, 'deckard')
 
         registry = self._makeRegistry()
-        eq = self.assertEqual
         result = registry.resolve('bladerunner', None, deckard, name=ALL)
         self.assertEqual(result, ['deckardvalue'])
         registry.register('bladerunner', 'deckardvalue2' , None, 'deckard',
@@ -832,27 +828,6 @@ class TestProvidesAsFunction(unittest.TestCase):
         from repoze.component import provides
         self.assertRaises(TypeError, provides)
 
-class TestProvidesInsideClass(unittest.TestCase):
-    def test_class_inheritance(self):
-        from repoze.component import provides
-        class Foo(object):
-            provides('abc', 'def')
-        class Foo2(Foo):
-            provides('ghi')
-        self.assertEqual(Foo2.__inherited_component_types__,
-                         ('ghi', 'abc', 'def'))
-
-    def test_morethanonce(self):
-        from repoze.component import provides
-        class Foo(object):
-            provides('abc', 'def')
-            try:
-                provides('ghi')
-            except TypeError:
-                pass
-            else:
-                raise AssertionError('wrong')
-
 class TestOnlyProvidesAsFunction(unittest.TestCase):
     def _callFUT(self, obj, *types):
         from repoze.component import onlyprovides
@@ -868,7 +843,7 @@ class TestOnlyProvidesAsFunction(unittest.TestCase):
 
     def test_no_types(self):
         from repoze.component import onlyprovides
-        self.assertRaises(TypeError, provides)
+        self.assertRaises(TypeError, onlyprovides)
 
 class TestProvidesInsideClass(unittest.TestCase):
     def test_class_inheritance(self):
@@ -891,7 +866,7 @@ class TestProvidesInsideClass(unittest.TestCase):
                 onlyprovides('ghi')
             except TypeError:
                 pass
-            else:
+            else: # pragma: no cover
                 raise AssertionError('wrong')
         
 class TestAugmentedProduct(unittest.TestCase):

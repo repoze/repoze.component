@@ -127,7 +127,7 @@ class TestSubscriberDirective(unittest.TestCase):
                          
 class DummyRegistry:
     def register(self):
-        pass
+        """ """
 
 class DummyDeclaration:
     def __init__(self, **kw):
