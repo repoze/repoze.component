@@ -9,4 +9,6 @@ developers who may wish to provide alternate implementations of
 application logic or configuration values.
 
 See docs/index.rst or `http://docs.repoze.org/component
-<http://docs.repoze.org/component>`_ for more information.
+<http://docs.repoze.org/component>`_ for more information.  Version control
+pull requests and bug reports should be done via
+https://github.com/repoze/repoze.component .
