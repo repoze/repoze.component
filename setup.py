@@ -19,10 +19,15 @@ import os
 from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
-README = open(os.path.join(here, 'README.txt')).read()
-CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
+try:
+    README = open(os.path.join(here, 'README.txt')).read()
+    CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
+except IOError:
+    README = CHANGES = ''
 
 requires = ['repoze.lru']
+
+testing_extras = ['nose', 'coverage']
 
 setup(name='repoze.component',
       version=__version__,
@@ -31,6 +36,10 @@ setup(name='repoze.component',
       classifiers=[
         "Intended Audience :: Developers",
         "Programming Language :: Python",
+        "Programming Language :: Python :: 2.6",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: Implementation :: CPython",
+        "Programming Language :: Python :: Implementation :: PyPy",
         ],
       keywords='repoze configuration',
       author="Agendaless Consulting",
@@ -48,6 +57,9 @@ setup(name='repoze.component',
       [repoze.configuration.directive]
       component = repoze.component.directives:component
       subscriber = repoze.component.directives:subscriber
-      """
-      )
+      """,
+      extras_require = {
+        'testing': testing_extras,
+      },
+)
 
